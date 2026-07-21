@@ -24,3 +24,28 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+@layer base {
+  /* Largura e altura geral da barra de rolagem */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  /* Fundo/Trilho da barra de rolagem */
+  ::-webkit-scrollbar-track {
+    background: #0b101b; /* Tom escuro combinando com o painel */
+    border-radius: 4px;
+  }
+
+  /* O "puxador" (thumb) da barra de rolagem */
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b; /* Tom de cinza azulado suave */
+    border-radius: 4px;
+    border: 1px solid rgba(59, 130, 246, 0.2); /* Sutil borda azulada */
+  }
+
+  /* Efeito ao passar o mouse por cima do puxador */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6; /* Fica azul vibrante ao interagir */
+  }
+}

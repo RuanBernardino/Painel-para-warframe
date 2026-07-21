@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Painel Warframe (Warframe Dashboard)
 
-## Getting Started
+Um painel de controle web moderno e em tempo real para monitorar alertas, ciclos e eventos do **Warframe**, desenvolvido para auxiliar os jogadores a acompanharem o universo do jogo diretamente pelo navegador.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🛠️ Tecnologias Utilizadas
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Este projeto foi construído utilizando tecnologias modernas de desenvolvimento web:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **[Next.js](https://next.js/)** (App Router) - Framework React para otimização e renderização de páginas.
+* **TypeScript** - Tipagem estática para maior segurança e escalabilidade do código.
+* **Tailwind CSS** - Estilização rápida e responsiva com foco em design futurista/dark.
+* **API Comunitária do Warframe** (`api.warframestat.us`) - Integração para obtenção de dados em tempo real sobre o jogo.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## ✨ Funcionalidades
 
-To learn more about Next.js, take a look at the following resources:
+* 🔄 **Atualização em Tempo Real**: Consulta automática de dados de ciclos e eventos ativos.
+* 🛡️ **Proxy de API Interno**: Estrutura segura de rotas utilizando o backend do Next.js (`route.ts`).
+* 🎨 **Interface Estilizada**: Layout imersivo inspirado na estética tecnológica do jogo.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Como Rodar o Projeto Localmente
 
-## Deploy on Vercel
+Se você quiser clonar e rodar o projeto na sua máquina, siga os passos abaixo:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/RuanBernardino/Painel-para-warframe.git
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Entre na pasta do projeto:**
+   ```bash
+   cd Painel-para-warframe
+   ```
+
+3. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
+
+4. **Inicie o servidor de desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
+
+5. Abra **http://localhost:3000** no seu navegador para ver o painel rodando!
+
+---
+
+## 📂 Estrutura Principal do Projeto
+
+* `app/` - Contém as páginas principais e as rotas de API personalizadas (`api/warframe/[endpoint]`).
+* `components/` - Componentes visuais reutilizáveis (cards de ciclo, alertas, timers, etc.).
+* `lib/` - Funções utilitárias e gerenciamento de requisições à API.
+
+---
+
+> Desenvolvido por Ruan Bernardino.
