@@ -1,5 +1,7 @@
+'use client';
 import { useState } from 'react';
 import FissureCard from './FissureCard';
+import FissureAlertModal from './FissureAlertModal';
 
 interface VoidFissuresSectionProps {
   fissuresData: any[];
@@ -10,6 +12,7 @@ export default function VoidFissuresSection({ fissuresData }: VoidFissuresSectio
   const [showFilters, setShowFilters] = useState(false);
   const [filterTier, setFilterTier] = useState('Any');
   const [filterMission, setFilterMission] = useState('Any');
+  const [showAlertModal, setShowModalAlert] = useState(false);
 
   const tiersOrder = ['Lith', 'Meso', 'Neo', 'Axi', 'Requiem', 'Omnia'];
 
@@ -53,7 +56,9 @@ export default function VoidFissuresSection({ fissuresData }: VoidFissuresSectio
   }, {});
 
   return (
-    <div className="bg-[#131b2e] p-5 rounded-xl border border-gray-800 mb-6">
+    <div className="bg-[#131b2e] p-5 rounded-xl border border-gray-800 mb-6 relative">
+      
+      {/* CABEÇALHO: ABAS, CONTADOR, FILTROS E O BOTÃO DE ALARME INTEGRADO */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 border-b border-gray-800 pb-3">
         <div className="flex items-center gap-2 w-full md:w-auto">
           {['Normal', 'Steel Path', 'Void Storms'].map((cat) => (
@@ -73,12 +78,22 @@ export default function VoidFissuresSection({ fissuresData }: VoidFissuresSectio
 
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           <span className="text-xs text-gray-400">Total: {categoryFissures.length}</span>
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-1.5 rounded-lg text-gray-300 transition flex items-center gap-1.5"
-          >
-            <span>🔍</span> {showFilters ? 'Ocultar Filtros' : 'Filtrar Era/Missão'}
-          </button>
+          
+          <div className="flex items-center gap-2">
+            {/* Botão de Alarme de Fissura integrado com ícone */}
+            <FissureAlertModal 
+              fissuresData={fissuresData}
+              showAlertModal={showAlertModal}
+              setShowModalAlert={setShowModalAlert}
+            />
+
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-1.5 rounded-lg text-gray-300 transition flex items-center gap-1.5"
+            >
+              <span>🔍</span> {showFilters ? 'Ocultar Filtros' : 'Filtrar Era/Missão'}
+            </button>
+          </div>
         </div>
       </div>
 

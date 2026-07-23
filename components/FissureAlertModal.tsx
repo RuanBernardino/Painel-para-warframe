@@ -138,16 +138,17 @@ export default function FissureAlertModal({
 
   return (
     <>
-      {/* Botão de acionamento (fica na barra superior) */}
+      {/* Botão de acionamento (agora integrado na barra da seção de Fissuras) */}
       <button 
         onClick={() => setShowModalAlert(true)}
-        className={`text-xs px-3 py-1.5 rounded-lg font-mono transition flex items-center gap-1.5 border ${
+        className={`text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border ${
           hasAlerts 
             ? 'bg-green-600/30 border-green-500 text-green-300 animate-pulse' 
-            : 'bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-800'
+            : 'bg-[#0e1422] border-gray-700 text-gray-300 hover:bg-gray-800'
         }`}
+        title="Gerenciar Alertas de Fissura"
       >
-        🔔 Alertas de Fissura ({isMounted ? alertsList.length : 0})
+        <span>🔔</span>
       </button>
 
       {/* PAINEL / MODAL FLUTUANTE NA FRENTE DA TELA (OVERLAY) */}

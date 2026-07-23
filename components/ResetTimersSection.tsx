@@ -102,13 +102,13 @@ export default function ResetTimersSection() {
 
         {/* WEEKLY */}
         <div className="flex justify-between items-center bg-[#0e1422] p-2.5 rounded-lg border border-gray-800/60">
-          <span className="text-gray-300 font-medium">Weekly resets <span className="text-[10px] text-gray-500">(Archons, Circuit...)</span></span>
+          <span className="text-gray-300 font-medium">Reset semanal  <span className="text-[10px] text-gray-500">(Archons, Circuit...)</span></span>
           <span className="font-mono font-bold text-blue-300">{timers.weekly}</span>
         </div>
 
         {/* DAILY */}
         <div className="flex justify-between items-center bg-[#0e1422] p-2.5 rounded-lg border border-gray-800/60">
-          <span className="text-gray-300 font-medium">Daily resets <span className="text-[10px] text-gray-500">(Standing caps, SP...)</span></span>
+          <span className="text-gray-300 font-medium">Reset diários <span className="text-[10px] text-gray-500">(Tributo Diário, Night...)</span></span>
           <span className="font-mono font-bold text-green-300">{timers.daily}</span>
         </div>
       </div>

@@ -72,7 +72,7 @@ export default function CircuitSection() {
             The Circuit (Duviri)
           </h3>
           <span className="text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded font-mono">
-            Weekly
+            Semanalmente
           </span>
         </div>
 
