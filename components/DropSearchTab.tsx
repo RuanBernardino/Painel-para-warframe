@@ -1,14 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-// Categorias permitidas
 const ALLOWED_CATEGORIES = [
   'Primary', 'Secondary', 'Melee', 'Sentinel', 
-  'Warframe', 'Arch-gun', 'Arch-melee', 'Archwing', 
+  'Warframe', 'Warframes', 'Suits', 'Arch-gun', 'Arch-melee', 'Archwing', 
   'Railjack', 'Misc', 'Arcanes', 'Fish'
 ];
 
-// Mapeamento de recursos comuns para seus respectivos planetas/fontes no Warframe
 const RESOURCE_PLANETS: { [key: string]: string } = {
   'hexenon': 'Júpiter (Disruption / Missões em Júpiter)',
   'nano spores': 'Saturno, Júpiter, Eris, Neptune',
@@ -81,12 +79,49 @@ export default function DropSearchTab({
           const itemsJson = await resItems.json();
           
           const filteredBaseItems = itemsJson.filter((i: any) => {
-            const category = i.category || '';
+            const category = (i.category || '').toLowerCase();
+            const type = (i.type || '').toLowerCase();
             const rawName = cleanItemName(i.name || '').toLowerCase();
+            const uniqueName = (i.uniqueName || '').toLowerCase();
 
-            if (!ALLOWED_CATEGORIES.includes(category)) return false;
+            if (
+              uniqueName.includes('/recipes/') || 
+              uniqueName.includes('/store/') ||
+              uniqueName.includes('/powers/') ||
+              category === 'abilities' ||
+              type === 'abilities' ||
+              rawName.includes('chassis blueprint') ||
+              rawName.includes('neuroptics blueprint') ||
+              rawName.includes('systems blueprint')
+            ) {
+              return false;
+            }
 
-            if (rawName.includes('animation') || rawName.includes('glyph') || category.toLowerCase().includes('animation') || category.toLowerCase().includes('glyph')) {
+            const isAllowed = ALLOWED_CATEGORIES.some(c => 
+              category === c.toLowerCase() || 
+              type === c.toLowerCase() || 
+              category.includes('warframe') || 
+              type.includes('warframe') ||
+              category.includes('suit') ||
+              type.includes('suit')
+            );
+
+            if (!isAllowed) return false;
+
+            if (
+              rawName.includes('animation') || 
+              rawName.includes('glyph') || 
+              rawName.includes('sigil') || 
+              rawName.includes('k-drive') ||
+              rawName.includes('specter') ||
+              rawName.includes('kuaka') ||
+              rawName.includes('skin') ||
+              rawName.includes('helmet') ||
+              category.includes('skins') ||
+              type.includes('skins') ||
+              category.includes('helmet') ||
+              type.includes('helmet')
+            ) {
               return false;
             }
 
@@ -131,29 +166,28 @@ export default function DropSearchTab({
   }, [initialSearch]);
 
   const filteredItems = searchTerm.trim() === '' ? [] : allItems.filter((item: any) => {
-    const cleanName = cleanItemName(item.name);
-    const nameLower = cleanName.toLowerCase();
-    const category = item.category || '';
-
-    if (!ALLOWED_CATEGORIES.includes(category)) return false;
-    if (nameLower.includes('animation') || nameLower.includes('glyph')) return false;
-
-    return nameLower.includes(searchTerm.toLowerCase());
+    const cleanName = cleanItemName(item.name).toLowerCase();
+    const term = searchTerm.toLowerCase().trim();
+    return cleanName.includes(term);
+  }).sort((a, b) => {
+    const nameA = cleanItemName(a.name).toLowerCase();
+    const nameB = cleanItemName(b.name).toLowerCase();
+    const term = searchTerm.toLowerCase().trim();
+    
+    const aStartsWith = nameA.startsWith(term);
+    const bStartsWith = nameB.startsWith(term);
+    
+    if (aStartsWith && !bStartsWith) return -1;
+    if (!aStartsWith && bStartsWith) return 1;
+    return nameA.localeCompare(nameB);
   }).slice(0, 10);
 
   const addItemToList = (item: any) => {
-    const nameLower = cleanItemName(item.name).toLowerCase();
-    const category = item.category || '';
-
-    if (!ALLOWED_CATEGORIES.includes(category) || nameLower.includes('animation') || nameLower.includes('glyph')) {
-      return; 
-    }
-
     if (!selectedDropItems.some(i => i.uniqueName === item.uniqueName)) {
       setSelectedDropItems([...selectedDropItems, item]);
       setExpandedItems(prev => ({ ...prev, [item.uniqueName]: false }));
     }
-    searchBarReset: setSearchTerm('');
+    setSearchTerm('');
   };
 
   const removeItemFromList = (uniqueName: string) => {
@@ -174,87 +208,149 @@ export default function DropSearchTab({
     }));
   };
 
-  const getDropsForItem = (item: any) => {
+  const getDetailedComponentData = (item: any) => {
     if (!item) return [];
     
     const itemNameClean = cleanItemName(item.name);
     const itemNameLower = itemNameClean.toLowerCase();
-    
-    const targets: string[] = [itemNameLower];
-    const foundDrops: any[] = [];
-    const componentQuantities: { [key: string]: number } = {};
+    const isPrimeItem = itemNameLower.includes('prime');
+    const componentList: any[] = [];
 
     const extractDropObject = (d: any, defaultResourceName: string, iconDefault: string) => {
       const loc = cleanItemName(d.location || d.place || d.source || 'Local Desconhecido');
       
-      // Normaliza o nome do recurso removendo quantidades numéricas explícitas (ex: "200X Nano Spores" vira "Nano Spores")
       let dropResourceName = cleanItemName(d.type || d.item || defaultResourceName);
       dropResourceName = dropResourceName.replace(/^\d+x\s*/i, '').trim();
       
       if (!loc.toLowerCase().includes('hallowed')) {
-        foundDrops.push({
+        let detectedTier = '';
+        let detectedRelicName = '';
+        const locLower = loc.toLowerCase();
+        if (locLower.includes('lith')) detectedTier = 'Lith';
+        else if (locLower.includes('meso')) detectedTier = 'Meso';
+        else if (locLower.includes('neo')) detectedTier = 'Neo';
+        else if (locLower.includes('axi')) detectedTier = 'Axi';
+        else if (locLower.includes('requiem')) detectedTier = 'Requiem';
+
+        return {
           source: loc,
           resourceName: dropResourceName,
           chanceNum: d.chance !== undefined ? Number(d.chance) : 0,
           chance: d.chance !== undefined ? Number(d.chance) : 0,
-          icon: iconDefault
-        });
+          icon: iconDefault,
+          isRelic: locLower.includes('relíquia') || locLower.includes('void') || detectedTier !== '',
+          tier: detectedTier,
+          relicNameStr: detectedRelicName
+        };
       }
+      return null;
     };
 
-    // 1. Varre os componentes com tratamento correto para o índice 0 (Blueprint principal)
     if (item.components && Array.isArray(item.components)) {
       item.components.forEach((comp: any, index: number) => {
         let compName = cleanItemName(comp.name || '');
         if (!compName) return;
 
-        if (index === 0) {
-          if (!compName.toLowerCase().includes(itemNameLower)) {
-            compName = `${itemNameClean} Blueprint`;
-          }
+        if (compName.toLowerCase() === 'blueprint' || (index === 0 && !compName.toLowerCase().includes(itemNameLower))) {
+          compName = `${itemNameClean} Blueprint`;
         }
 
-        targets.push(compName.toLowerCase());
-        if (comp.itemCount) {
-          componentQuantities[compName.toLowerCase()] = comp.itemCount;
-        }
-        
+        const compNameLower = compName.toLowerCase();
+        const foundDrops: any[] = [];
+
         if (comp.drops && Array.isArray(comp.drops) && comp.drops.length > 0) {
           comp.drops.forEach((d: any) => {
-            extractDropObject(d, compName, index === 0 ? '📜' : '📦');
+            const parsedDrop = extractDropObject(d, compName, compName.toLowerCase().includes('blueprint') ? '📜' : '📦');
+            if (parsedDrop) foundDrops.push(parsedDrop);
           });
         }
-      });
-    }
 
-    // 2. Verifica drops diretos no item principal
-    if (item.drops && Array.isArray(item.drops)) {
-      item.drops.forEach((d: any) => {
-        extractDropObject(d, `${itemNameClean} Blueprint`, '📜');
-      });
-    }
+        if (dropsData) {
+          if (dropsData.missionRewards) {
+            Object.entries(dropsData.missionRewards).forEach(([planetNode, missionData]: [string, any]) => {
+              const cleanPlanetNode = cleanItemName(planetNode);
+              if (missionData.rewards) {
+                Object.entries(missionData.rewards).forEach(([rot, rewardsList]: [string, any]) => {
+                  if (Array.isArray(rewardsList)) {
+                    rewardsList.forEach((reward: any) => {
+                      if (reward.item) {
+                        let cleanRewardItem = cleanItemName(reward.item);
+                        cleanRewardItem = cleanRewardItem.replace(/^\d+x\s*/i, '').trim();
+                        const rewardNameLower = cleanRewardItem.toLowerCase();
+                        
+                        if (rewardNameLower === compNameLower || rewardNameLower.includes(compNameLower) || compNameLower.includes(rewardNameLower)) {
+                          let targetResName = cleanRewardItem;
+                          if (rewardNameLower === 'blueprint') {
+                            targetResName = compName;
+                          }
+                          foundDrops.push({
+                            source: `${cleanPlanetNode} (${rot.toUpperCase()})`,
+                            resourceName: targetResName,
+                            chanceNum: reward.chance || 0,
+                            chance: reward.chance !== undefined ? reward.chance : 0,
+                            icon: '📍',
+                            isRelic: false
+                          });
+                        }
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
 
-    // 3. Varredura global (Mission Rewards e EnemyDrops)
-    if (dropsData) {
-      if (dropsData.missionRewards) {
-        Object.entries(dropsData.missionRewards).forEach(([planetNode, missionData]: [string, any]) => {
-          const cleanPlanetNode = cleanItemName(planetNode);
-          if (missionData.rewards) {
-            Object.entries(missionData.rewards).forEach(([rot, rewardsList]: [string, any]) => {
-              if (Array.isArray(rewardsList)) {
-                rewardsList.forEach((reward: any) => {
-                  if (reward.item) {
-                    let cleanRewardItem = cleanItemName(reward.item);
-                    cleanRewardItem = cleanRewardItem.replace(/^\d+x\s*/i, '').trim();
-                    const rewardNameLower = cleanRewardItem.toLowerCase();
-                    const matchedTarget = targets.find(t => rewardNameLower === t || rewardNameLower.includes(t) || t.includes(rewardNameLower));
-                    if (matchedTarget) {
+          const searchRelics = (relicsList: any[]) => {
+            if (!Array.isArray(relicsList)) return;
+            relicsList.forEach((relic: any) => {
+              const relicName = `${relic.tier} ${relic.relicName}`;
+              if (relic.rewards) {
+                relic.rewards.forEach((r: any) => {
+                  const rItem = cleanItemName(r.item || '').toLowerCase();
+                  if (rItem === compNameLower || rItem.includes(compNameLower) || compNameLower.includes(rItem)) {
+                    foundDrops.push({
+                      source: `Relíquia Void: ${relicName} (${r.rarity || 'Comum'})`,
+                      resourceName: compName,
+                      chanceNum: r.chance || 0,
+                      chance: r.chance !== undefined ? r.chance : 0,
+                      icon: '✨',
+                      isRelic: true,
+                      tier: relic.tier,
+                      relicNameStr: relic.relicName,
+                      rarity: r.rarity || 'Comum'
+                    });
+                  }
+                });
+              }
+            });
+          };
+
+          if (dropsData.relics) {
+            searchRelics(dropsData.relics);
+          }
+
+          if (dropsData.enemyDrops) {
+            dropsData.enemyDrops.forEach((enemy: any) => {
+              const cleanEnemyName = cleanItemName(enemy.enemyName || 'Inimigo Desconhecido');
+              if (enemy.drops) {
+                enemy.drops.forEach((drop: any) => {
+                  if (drop.item) {
+                    let cleanDropItem = cleanItemName(drop.item);
+                    cleanDropItem = cleanDropItem.replace(/^\d+x\s*/i, '').trim();
+                    const dropNameLower = cleanDropItem.toLowerCase();
+                    
+                    if (dropNameLower === compNameLower || dropNameLower.includes(compNameLower) || compNameLower.includes(dropNameLower)) {
+                      let targetResName = cleanDropItem;
+                      if (dropNameLower === 'blueprint') {
+                        targetResName = compName;
+                      }
                       foundDrops.push({
-                        source: `${cleanPlanetNode} (${rot.toUpperCase()})`,
-                        resourceName: cleanRewardItem,
-                        chanceNum: reward.chance || 0,
-                        chance: reward.chance !== undefined ? reward.chance : 0,
-                        icon: '📍'
+                        source: `Chefes / Inimigo: ${cleanEnemyName}`,
+                        resourceName: targetResName,
+                        chanceNum: drop.chance || 0,
+                        chance: drop.chance !== undefined ? drop.chance : 0,
+                        icon: '👾',
+                        isRelic: false
                       });
                     }
                   }
@@ -262,94 +358,88 @@ export default function DropSearchTab({
               }
             });
           }
-        });
-      }
-
-      if (dropsData.enemyDrops) {
-        dropsData.enemyDrops.forEach((enemy: any) => {
-          const cleanEnemyName = cleanItemName(enemy.enemyName || 'Inimigo Desconhecido');
-          if (enemy.drops) {
-            enemy.drops.forEach((drop: any) => {
-              if (drop.item) {
-                let cleanDropItem = cleanItemName(drop.item);
-                cleanDropItem = cleanDropItem.replace(/^\d+x\s*/i, '').trim();
-                const dropNameLower = cleanDropItem.toLowerCase();
-                const matchedTarget = targets.find(t => dropNameLower === t || dropNameLower.includes(t) || t.includes(dropNameLower));
-                
-                if (matchedTarget) {
-                  foundDrops.push({
-                    source: `Inimigo: ${cleanEnemyName}`,
-                    resourceName: cleanDropItem,
-                    chanceNum: drop.chance || 0,
-                    chance: drop.chance !== undefined ? drop.chance : 0,
-                    icon: '👾'
-                  });
-                }
-              }
-            });
-          }
-        });
-      }
-    }
-
-    // Fallback inteligente para componentes sem drop direto listado (recursos comuns)
-    if (item.components && Array.isArray(item.components)) {
-      item.components.forEach((comp: any, index: number) => {
-        let compName = cleanItemName(comp.name || '');
-        if (!compName) return;
-        if (index === 0 && !compName.toLowerCase().includes(itemNameLower)) {
-          compName = `${itemNameClean} Blueprint`;
         }
-        
-        const compNameLower = compName.toLowerCase();
-        const hasAnyDrop = foundDrops.some(d => d.resourceName.toLowerCase() === compNameLower);
-        
-        if (!hasAnyDrop) {
+
+        if (foundDrops.length === 0) {
           const mappedPlanet = RESOURCE_PLANETS[compNameLower];
-          const sourceText = mappedPlanet ? `Planeta de Drop: ${mappedPlanet}` : 'Local de Coleta Padrão do Planeta / Sistema';
+          const sourceText = isPrimeItem 
+            ? 'Disponível em Relíquias Void (Verifique o Codex)' 
+            : (mappedPlanet ? `Planeta de Drop: ${mappedPlanet}` : 'Local de Coleta / Pesquisa / Mercado');
 
           foundDrops.push({
-            source: index === 0 ? 'Local de Drop / Pesquisa / Mercado' : sourceText,
+            source: isPrimeItem ? 'Relíquia Void (Ativa ou Descontinuada)' : sourceText,
             resourceName: compName,
             chanceNum: -999,
             chance: -999,
-            icon: index === 0 ? '📜' : '🪐'
+            icon: isPrimeItem ? '✨' : '🪐',
+            isRelic: false
           });
         }
+
+        const consolidatedMap = new Map();
+        foundDrops.forEach(d => {
+          const key = `${d.source}-${d.resourceName}`;
+          if (consolidatedMap.has(key)) {
+            const existing = consolidatedMap.get(key);
+            if (existing.chanceNum > 0 && d.chanceNum > 0) {
+              existing.chanceNum += d.chanceNum;
+              existing.chance = existing.chanceNum;
+            }
+          } else {
+            consolidatedMap.set(key, { ...d });
+          }
+        });
+
+        const formattedDrops = Array.from(consolidatedMap.values()).map(d => ({
+          ...d,
+          chance: d.chance === -999 ? 'Disponível' : `${Number(d.chance).toFixed(2)}%`
+        })).sort((a, b) => {
+          if (a.isRelic && b.isRelic) {
+            const tierOrder: { [key: string]: number } = { 'Lith': 1, 'Meso': 2, 'Neo': 3, 'Axi': 4, 'Requiem': 5 };
+            const orderA = tierOrder[a.tier] || 99;
+            const orderB = tierOrder[b.tier] || 99;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.source.localeCompare(b.source);
+          }
+          if (a.isRelic && !b.isRelic) return -1;
+          if (!a.isRelic && b.isRelic) return 1;
+          
+          return b.chanceNum - a.chanceNum;
+        });
+
+        const craftIngredients: any[] = [];
+        if (comp.components && Array.isArray(comp.components)) {
+          comp.components.forEach((ing: any) => {
+            craftIngredients.push({
+              name: cleanItemName(ing.name || 'Recurso'),
+              count: ing.itemCount || 1
+            });
+          });
+        }
+
+        componentList.push({
+          componentName: compName,
+          itemCount: comp.itemCount || 1,
+          buildPrice: comp.buildPrice || 0,
+          buildTime: comp.buildTime || 0,
+          drops: formattedDrops,
+          craftIngredients: craftIngredients
+        });
       });
     }
 
-    // Consolida entradas repetidas para o mesmo recurso + mesma fonte, somando as porcentagens
-    const consolidatedMap = new Map();
-    foundDrops.forEach(d => {
-      const key = `${d.source}-${d.resourceName}`;
-      if (consolidatedMap.has(key)) {
-        const existing = consolidatedMap.get(key);
-        if (existing.chanceNum > 0 && d.chanceNum > 0) {
-          existing.chanceNum += d.chanceNum;
-          existing.chance = existing.chanceNum;
-        }
-      } else {
-        consolidatedMap.set(key, { ...d });
-      }
-    });
-
-    // Formata a exibição final da porcentagem
-    return Array.from(consolidatedMap.values()).map(d => ({
-      ...d,
-      chance: d.chance === -999 ? 'Disponível' : `${Number(d.chance).toFixed(2)}%`
-    })).sort((a, b) => b.chanceNum - a.chanceNum);
+    return componentList;
   };
 
   return (
     <div className="flex flex-col gap-4 text-gray-200 max-w-4xl mx-auto w-full">
       
-      {/* BARRA DE PESQUISA COM LISTA FLUTUANTE */}
+      {/* BARRA DE PESQUISA */}
       <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-800 flex flex-col gap-2 relative overflow-visible z-50">
-        <label className="block text-xs text-gray-400">Buscar Item na Base de Dados do Jogo:</label>
+        <label className="block text-xs text-gray-400">Buscar Warframe ou Item:</label>
         <input
           type="text"
-          placeholder={loading ? "Carregando base de dados do Warframe..." : "Digite o nome (ex: Acceltra, Rhino, Soma Prime)..."}
+          placeholder={loading ? "Carregando base de dados..." : "Digite o nome (ex: Excalibur, Rhino Prime, Saryn)..."}
           disabled={loading}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -360,7 +450,7 @@ export default function DropSearchTab({
           <div className="absolute top-full left-0 right-0 mt-1 bg-gray-950 border border-gray-700 rounded-lg shadow-2xl z-50 max-h-60 overflow-y-auto">
             {filteredItems.map((item: any) => {
               const displayName = cleanItemName(item.name);
-              const itemCategory = item.category || 'Misc';
+              const itemCategory = item.category || item.type || 'Misc';
               return (
                 <div 
                   key={item.uniqueName}
@@ -379,47 +469,23 @@ export default function DropSearchTab({
         )}
       </div>
 
-      {/* BLOCO ÚNICO DE ITENS SELECIONADOS E SEUS DROPS */}
+      {/* PAINEL DE ITENS SELECIONADOS */}
       <div className="bg-gray-900/40 border border-gray-800 rounded-lg p-4 flex flex-col gap-3">
-        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Itens Rastreados e Locais de Drop</h4>
+        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Itens Rastreados (Warframes & Primes)</h4>
         
         {selectedDropItems.length === 0 ? (
-          <p className="text-xs text-gray-500 italic py-8 text-center">Nenhum item adicionado à consulta. Use a busca acima para rastrear armas, warframes ou recursos!</p>
+          <p className="text-xs text-gray-500 italic py-8 text-center">Nenhum item adicionado à consulta. Busque por Excalibur, Rhino Prime, etc.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {selectedDropItems.map((item) => {
               const displayName = cleanItemName(item.name);
-              const itemCategory = item.category || 'Misc';
-              const drops = getDropsForItem(item);
+              const itemCategory = item.category || item.type || 'Misc';
+              const componentDetails = getDetailedComponentData(item);
               const isExpanded = !!expandedItems[item.uniqueName];
-
-              const componentQuantities: { [key: string]: number } = {};
-              if (item.components && Array.isArray(item.components)) {
-                item.components.forEach((comp: any, index: number) => {
-                  let compName = cleanItemName(comp.name || '');
-                  if (!compName) return;
-                  if (index === 0 && !compName.toLowerCase().includes(displayName.toLowerCase())) {
-                    compName = `${displayName} Blueprint`;
-                  }
-                  if (comp.itemCount) {
-                    componentQuantities[compName.toLowerCase()] = comp.itemCount;
-                  }
-                });
-              }
-
-              const groupedDrops = drops.reduce((acc: any, drop: any) => {
-                const compKey = drop.resourceName || 'Outros';
-                if (!acc[compKey]) {
-                  acc[compKey] = [];
-                }
-                acc[compKey].push(drop);
-                return acc;
-              }, {});
 
               return (
                 <div key={item.uniqueName} className="bg-gray-950/70 border border-gray-800 rounded-lg overflow-hidden transition">
                   
-                  {/* CABEÇALHO DO ITEM */}
                   <div className="flex justify-between items-center p-3 bg-gray-900/80 gap-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <span className="font-bold text-sm text-blue-400 break-words">{displayName}</span>
@@ -427,7 +493,7 @@ export default function DropSearchTab({
                         {itemCategory}
                       </span>
                       <span className="text-[10px] text-gray-400 font-mono bg-gray-950 px-2 py-0.5 rounded border border-gray-800 shrink-0">
-                        {drops.length} locais
+                        {componentDetails.length} partes
                       </span>
                     </div>
 
@@ -436,7 +502,7 @@ export default function DropSearchTab({
                         onClick={() => toggleExpand(item.uniqueName)}
                         className="text-xs font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded transition"
                       >
-                        {isExpanded ? 'Ocultar ▲' : 'Mostrar ▼'}
+                        {isExpanded ? 'Ocultar Partes ▲' : 'Mostrar Partes ▼'}
                       </button>
 
                       <button 
@@ -449,55 +515,82 @@ export default function DropSearchTab({
                     </div>
                   </div>
 
-                  {/* CONTEÚDO DOS DROPS ORGANIZADOS POR GRUPOS DE COMPONENTES */}
                   {isExpanded && (
-                    <div className="p-3 flex flex-col gap-4 border-t border-gray-800/60 bg-gray-950/30 max-h-80 overflow-y-auto pr-1">
-                      {Object.keys(groupedDrops).length === 0 ? (
-                        <span className="text-xs text-gray-500 italic">Este item não possui locais de drop válidos registrados nas tabelas oficiais.</span>
+                    <div className="p-3 flex flex-col gap-4 border-t border-gray-800/60 bg-gray-950/30 max-h-[32rem] overflow-y-auto pr-1">
+                      {componentDetails.length === 0 ? (
+                        <span className="text-xs text-gray-500 italic">Este item não possui componentes registrados.</span>
                       ) : (
-                        Object.entries(groupedDrops).map(([componentName, componentDrops]: [string, any]) => {
-                          const groupUniqueKey = `${item.uniqueName}-${componentName}`;
-                          const isGroupCollapsed = !!collapsedGroups[groupUniqueKey];
-                          const requiredQty = componentQuantities[componentName.toLowerCase()];
+                        componentDetails.map((comp: any) => {
+                          const groupUniqueKey = `${item.uniqueName}-${comp.componentName}`;
+                          const isGroupCollapsed = collapsedGroups[groupUniqueKey] !== undefined ? collapsedGroups[groupUniqueKey] : true;
 
                           return (
-                            <div key={componentName} className="flex flex-col gap-2 bg-gray-900/30 p-2.5 rounded-lg border border-gray-800/50">
+                            <div key={comp.componentName} className="flex flex-col gap-3 bg-gray-900/30 p-3 rounded-lg border border-gray-800/60">
                               
-                              <div className="flex items-center justify-between text-xs font-bold text-green-400 border-b border-gray-800/80 pb-1.5">
+                              <div className="flex items-center justify-between text-xs font-bold text-green-400 border-b border-gray-800/80 pb-2">
                                 <div className="flex items-center gap-2">
-                                  <span>{componentName.toLowerCase().includes('blueprint') ? '📜' : '📦'}</span>
-                                  <span>{componentName}</span>
-                                  {requiredQty && (
-                                    <span className="text-[10px] font-mono text-yellow-300 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
-                                      Qtd: {requiredQty}
+                                  <span>{comp.componentName.toLowerCase().includes('blueprint') ? '📜' : '⚙️'}</span>
+                                  <span className="text-sm text-white">{comp.componentName}</span>
+                                  <span className="text-[10px] font-mono text-yellow-300 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
+                                    Qtd: {comp.itemCount}
+                                  </span>
+                                  {comp.buildPrice > 0 && (
+                                    <span className="text-[10px] font-mono text-gray-400 bg-gray-950 px-1.5 py-0.5 rounded border border-gray-800">
+                                      Créditos: {comp.buildPrice.toLocaleString()}
                                     </span>
                                   )}
-                                  <span className="text-[10px] text-gray-400 font-mono bg-gray-950 px-1.5 py-0.5 rounded border border-gray-800">
-                                    {(componentDrops as any[]).length} locais
-                                  </span>
                                 </div>
                                 <button
                                   onClick={() => toggleGroupCollapse(groupUniqueKey)}
-                                  className="text-[10px] font-semibold text-gray-400 bg-gray-800 hover:bg-gray-700 hover:text-white px-2 py-0.5 rounded transition"
+                                  className="text-[10px] font-semibold text-gray-400 bg-gray-800 hover:bg-gray-700 hover:text-white px-2 py-1 rounded transition"
                                 >
-                                  {isGroupCollapsed ? 'Expandir ▼' : 'Recolher ▲'}
+                                  {isGroupCollapsed ? 'Expandir Detalhes ▼' : 'Recolher ▲'}
                                 </button>
                               </div>
 
                               {!isGroupCollapsed && (
-                                <div className="flex flex-col gap-1.5">
-                                  {(componentDrops as any[]).map((d: any, i: number) => (
-                                    <div key={i} className="bg-gray-950/50 p-2 rounded border border-gray-800/60 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs">
-                                      <div className="text-gray-200 font-medium leading-relaxed">
-                                        {d.icon} <span className="text-gray-100">{d.source}</span>
+                                <div className="flex flex-col gap-3">
+                                  
+                                  {/* DROPS / RELÍQUIAS ORDENADAS POR NOME/TIER */}
+                                  <div className="flex flex-col gap-1.5">
+                                    <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">📍 Onde Encontrar / Relíquias Void (Ordenadas por Nome/Tier):</span>
+                                    {comp.drops.length === 0 ? (
+                                      <span className="text-xs text-gray-500 italic pl-2">Nenhum local de drop registrado.</span>
+                                    ) : (
+                                      <div className="flex flex-col gap-1 pl-1">
+                                        {comp.drops.map((d: any, i: number) => (
+                                          <div key={i} className="bg-gray-950/60 p-2 rounded border border-gray-800/60 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs">
+                                            <div className="text-gray-200 font-medium leading-relaxed">
+                                              {d.icon} <span className="text-gray-100">{d.source}</span>
+                                            </div>
+                                            <span className="font-mono text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 shrink-0 self-start sm:self-auto">
+                                              {d.chance}
+                                            </span>
+                                          </div>
+                                        ))}
                                       </div>
-                                      <div className="flex justify-between items-center sm:justify-end gap-3 pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-800/50 shrink-0">
-                                        <span className="font-mono text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 shrink-0">
-                                          {d.chance}
-                                        </span>
+                                    )}
+                                  </div>
+
+                                  {/* MATERIAIS DE CRAFT */}
+                                  <div className="flex flex-col gap-1.5 pt-2 border-t border-gray-800/40">
+                                    <span className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider">🛠️ Materiais para Construir na Fundição:</span>
+                                    {comp.craftIngredients.length === 0 ? (
+                                      <span className="text-xs text-gray-500 italic pl-2">Esta parte não exige materiais adicionais de fundição.</span>
+                                    ) : (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-1">
+                                        {comp.craftIngredients.map((ing:any, i: number) => (
+                                          <div key={i} className="bg-gray-950/60 p-2 rounded border border-gray-800/60 flex justify-between items-center text-xs">
+                                            <span className="text-gray-300 font-medium">📦 {ing.name}</span>
+                                            <span className="font-mono text-yellow-300 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 shrink-0">
+                                              x{ing.count}
+                                            </span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    </div>
-                                  ))}
+                                    )}
+                                  </div>
+
                                 </div>
                               )}
 
