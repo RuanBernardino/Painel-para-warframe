@@ -1,146 +1,64 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { triggerGlobalNotification } from './NotificationManager';
+import { useState, useEffect } from 'react';
 
-interface FissureAlertItem {
+interface FissureAlert {
   id: string;
   category: string;
   tier: string;
   mission: string;
 }
 
-interface FissureAlertModalProps {
-  fissuresData: any[];
-  showAlertModal: boolean;
-  setShowModalAlert: (show: boolean) => void;
-}
+export default function FissureAlertModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [fissureAlerts, setFissureAlerts] = useState<FissureAlert[]>([]);
+  
+  // Exemplo de estados para os selects do formulário dentro da modal
+  const [category, setCategory] = useState('Normal');
+  const [tier, setTier] = useState('Lith');
+  const [mission, setMission] = useState('Survival');
 
-export default function FissureAlertModal({ 
-  fissuresData, 
-  showAlertModal, 
-  setShowModalAlert
-}: FissureAlertModalProps) {
-  // Estado para garantir que rodou apenas no cliente e evitar erro de hidratação
-  const [isMounted, setIsMounted] = useState(false);
-
-  // 1. Lista de múltiplos ativos (inicializa vazio no SSR para bater com o servidor)
-  const [alertsList, setAlertsList] = useState<FissureAlertItem[]>([]);
-
-  // Sincroniza o localStorage logo após a montagem no cliente
+  // Carrega do localStorage ao iniciar
   useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem('warframe_fissure_alerts');
-    if (saved) {
-      try {
-        setAlertsList(JSON.parse(saved));
-      } catch (e) {
-        console.error('Erro ao carregar alertas salvos:', e);
+    try {
+      const saved = localStorage.getItem('warframe_fissure_alerts');
+      if (saved) {
+        setFissureAlerts(JSON.parse(saved));
       }
+    } catch (err) {
+      console.error('Erro ao carregar alertas:', err);
     }
   }, []);
 
-  // 2. Salva automaticamente no localStorage sempre que a lista de alertas mudar (e já estiver montado)
-  useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem('warframe_fissure_alerts', JSON.stringify(alertsList));
+  const saveToStorage = (updated: FissureAlert[]) => {
+    setFissureAlerts(updated);
+    try {
+      localStorage.setItem('warframe_fissure_alerts', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Erro ao salvar alertas:', err);
     }
-  }, [alertsList, isMounted]);
-
-  // Configuração temporária para adicionar um novo alerta
-  const [newAlertConfig, setNewAlertConfig] = useState({
-    tier: 'Lith',
-    mission: 'Survival',
-    category: 'Normal'
-  });
-
-  // Trava para evitar que o alarme toque repetidamente para o mesmo alerta
-  const triggeredIdsRef = useRef<Set<string>>(new Set());
-
-  // Referência para manter a lista atualizada dentro do useEffect sem quebrar as dependências do React
-  const alertsListRef = useRef(alertsList);
-  useEffect(() => {
-    alertsListRef.current = alertsList;
-  }, [alertsList]);
-
-  const tiersOrder = ['Lith', 'Meso', 'Neo', 'Axi', 'Requiem', 'Omnia'];
-
-  const isFissureStorm = (f: any) => {
-    return f.isStorm === true || f.isVoidStorm === true || (f.modifier && f.modifier.toLowerCase().includes('storm'));
   };
 
-  const isFissureSteelPath = (f: any) => {
-    return (
-      f.isHard === true ||
-      f.steelPath === true || 
-      f.isSteelPath === true || 
-      (f.id && f.id.toLowerCase().includes('sp')) ||
-      (f.node && f.node.toLowerCase().includes('steel path')) ||
-      JSON.stringify(f).toLowerCase().includes('steelpath')
-    );
-  };
-
-  // Adicionar novo alerta na lista
   const handleAddAlert = () => {
-    const item: FissureAlertItem = {
+    const newAlert: FissureAlert = {
       id: Math.random().toString(36).substring(2, 9),
-      category: newAlertConfig.category,
-      tier: newAlertConfig.tier,
-      mission: newAlertConfig.mission
+      category,
+      tier,
+      mission,
     };
-    setAlertsList([...alertsList, item]);
+    saveToStorage([...fissureAlerts, newAlert]);
   };
 
-  // Remover alerta específico da lista
   const handleRemoveAlert = (id: string) => {
-    setAlertsList(alertsList.filter(alert => alert.id !== id));
-    triggeredIdsRef.current.delete(id);
+    saveToStorage(fissureAlerts.filter(item => item.id !== id));
   };
 
-  // Efeito que monitora todos os alertas cadastrados em tempo real de forma segura
-  useEffect(() => {
-    const currentAlerts = alertsListRef.current;
-    if (currentAlerts.length === 0) return;
-
-    currentAlerts.forEach(alert => {
-      const matchingFissure = fissuresData.find(f => {
-        const matchesTier = f.tier === alert.tier;
-        const matchesMission = f.missionType?.toLowerCase().includes(alert.mission.toLowerCase());
-        
-        let matchesCategory = false;
-        if (alert.category === 'Void Storms') {
-          matchesCategory = isFissureStorm(f);
-        } else if (alert.category === 'Steel Path') {
-          matchesCategory = isFissureSteelPath(f) && !isFissureStorm(f);
-        } else {
-          matchesCategory = !isFissureSteelPath(f) && !isFissureStorm(f);
-        }
-
-        return matchesTier && matchesMission && matchesCategory;
-      });
-
-      if (matchingFissure) {
-        if (!triggeredIdsRef.current.has(alert.id)) {
-          triggerGlobalNotification(
-            'fissure', 
-            `Fissura [${alert.category}] ${alert.tier}`, 
-            `${alert.mission} em ${matchingFissure.node} está ONLINE!`
-          );
-          triggeredIdsRef.current.add(alert.id);
-        }
-      } else {
-        triggeredIdsRef.current.delete(alert.id);
-      }
-    });
-  }, [fissuresData]);
-
-  // Se ainda estiver carregando no servidor, renderiza uma versão neutra (evita o mismatch)
-  const hasAlerts = isMounted && alertsList.length > 0;
+  const hasAlerts = fissureAlerts.length > 0;
 
   return (
     <>
-      {/* Botão de acionamento (agora integrado na barra da seção de Fissuras) */}
+      {/* Botão com o número e piscando */}
       <button 
-        onClick={() => setShowModalAlert(true)}
+        onClick={() => setIsOpen(true)}
         className={`text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border ${
           hasAlerts 
             ? 'bg-green-600/30 border-green-500 text-green-300 animate-pulse' 
@@ -149,124 +67,118 @@ export default function FissureAlertModal({
         title="Gerenciar Alertas de Fissura"
       >
         <span>🔔</span>
+        {hasAlerts && (
+          <span className="font-bold text-[11px] bg-green-500 text-black px-1.5 py-0.5 rounded-full">
+            {fissureAlerts.length}
+          </span>
+        )}
       </button>
 
-      {/* PAINEL / MODAL FLUTUANTE NA FRENTE DA TELA (OVERLAY) */}
-      {showAlertModal && (
+      {/* Modal / Pop-up */}
+      {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#131b2e] border border-blue-500/40 w-full max-w-xl p-6 rounded-2xl shadow-2xl relative">
+          <div className="bg-[#131b2e] border border-gray-800 rounded-2xl max-w-lg w-full p-6 text-white shadow-2xl space-y-5">
             
-            <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-3">
-              <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">🎯 Gerenciar Alertas de Fissura</h3>
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+              <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
+                <span>🎯</span> GERENCIAR ALERTAS DE FISSURA
+              </h3>
               <button 
-                onClick={() => setShowModalAlert(false)} 
-                className="text-gray-400 hover:text-white text-xs bg-gray-800 px-2.5 py-1 rounded-lg"
+                onClick={() => setIsOpen(false)}
+                className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded text-xs transition font-semibold"
               >
                 ✕ Fechar
               </button>
             </div>
-            
-            {/* Bloco de Configuração para Adicionar Novo Alerta */}
-            <div className="bg-[#0e1422] border border-gray-800 p-4 rounded-xl mb-5">
-              <p className="text-xs font-semibold text-gray-300 mb-3">Criar Novo Alerta:</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 text-xs">
+
+            {/* Criar Alerta */}
+            <div className="bg-[#0e1422] p-4 rounded-xl border border-gray-800/60 space-y-3">
+              <span className="text-xs font-bold text-gray-300 block">Criar Novo Alerta:</span>
+              
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <span className="text-gray-400 block mb-1">Categoria:</span>
+                  <label className="text-[10px] text-gray-400 uppercase block mb-1">Categoria:</label>
                   <select 
-                    value={newAlertConfig.category} 
-                    onChange={(e) => setNewAlertConfig({...newAlertConfig, category: e.target.value})}
-                    className="w-full bg-[#131b2e] border border-gray-700 rounded p-2 text-white outline-none"
+                    value={category} 
+                    onChange={e => setCategory(e.target.value)}
+                    className="w-full bg-[#131b2e] border border-gray-700 text-white p-2 rounded-lg text-xs"
                   >
                     <option value="Normal">Normal</option>
                     <option value="Steel Path">Steel Path</option>
-                    <option value="Void Storms">Void Storms</option>
                   </select>
                 </div>
 
                 <div>
-                  <span className="text-gray-400 block mb-1">Era (Tier):</span>
+                  <label className="text-[10px] text-gray-400 uppercase block mb-1">Era (Tier):</label>
                   <select 
-                    value={newAlertConfig.tier} 
-                    onChange={(e) => setNewAlertConfig({...newAlertConfig, tier: e.target.value})}
-                    className="w-full bg-[#131b2e] border border-gray-700 rounded p-2 text-white outline-none"
+                    value={tier} 
+                    onChange={e => setTier(e.target.value)}
+                    className="w-full bg-[#131b2e] border border-gray-700 text-white p-2 rounded-lg text-xs"
                   >
-                    {tiersOrder.map(t => <option key={t} value={t}>{t}</option>)}
+                    <option value="Lith">Lith</option>
+                    <option value="Meso">Meso</option>
+                    <option value="Neo">Neo</option>
+                    <option value="Axi">Axi</option>
                   </select>
                 </div>
 
                 <div>
-                  <span className="text-gray-400 block mb-1">Missão:</span>
+                  <label className="text-[10px] text-gray-400 uppercase block mb-1">Missão:</label>
                   <select 
-                    value={newAlertConfig.mission} 
-                    onChange={(e) => setNewAlertConfig({...newAlertConfig, mission: e.target.value})}
-                    className="w-full bg-[#131b2e] border border-gray-700 rounded p-2 text-white outline-none"
+                    value={mission} 
+                    onChange={e => setMission(e.target.value)}
+                    className="w-full bg-[#131b2e] border border-gray-700 text-white p-2 rounded-lg text-xs"
                   >
                     <option value="Survival">Survival</option>
-                    <option value="Capture">Capture</option>
-                    <option value="Extermination">Extermination</option>
-                    <option value="Mobile Defense">Mobile Defense</option>
                     <option value="Defense">Defense</option>
                     <option value="Spy">Spy</option>
-                    <option value="Skirmish">Skirmish (Railjack)</option>
+                    <option value="Rescue">Rescue</option>
                   </select>
                 </div>
               </div>
 
               <button 
                 onClick={handleAddAlert}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-xs transition"
+                className="w-full mt-2 bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-lg text-xs transition"
               >
                 + Adicionar Alerta à Lista
               </button>
             </div>
 
-            {/* Listagem dos Alertas Ativos com Opção de Excluir */}
-            <div>
-              <p className="text-xs font-semibold text-gray-300 mb-2">Alertas Cadastrados ({alertsList.length}):</p>
-              
-              {alertsList.length === 0 ? (
-                <div className="text-center py-6 text-gray-500 text-xs border border-dashed border-gray-800 rounded-xl">
-                  Nenhum alerta cadastrado. Adicione um acima!
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                  {alertsList.map((alert) => {
-                    const isOnline = fissuresData.some(f => {
-                      const matchesTier = f.tier === alert.tier;
-                      const matchesMission = f.missionType?.toLowerCase().includes(alert.mission.toLowerCase());
-                      let matchesCategory = false;
-                      if (alert.category === 'Void Storms') matchesCategory = isFissureStorm(f);
-                      else if (alert.category === 'Steel Path') matchesCategory = isFissureSteelPath(f) && !isFissureStorm(f);
-                      else matchesCategory = !isFissureSteelPath(f) && !isFissureStorm(f);
-                      return matchesTier && matchesMission && matchesCategory;
-                    });
+            {/* Lista Cadastrada */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-gray-300 block">
+                Alertas Cadastrados ({fissureAlerts.length}):
+              </span>
 
-                    return (
-                      <div 
-                        key={alert.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border text-xs ${
-                          isOnline ? 'bg-green-950/40 border-green-500/60 text-green-300' : 'bg-[#0e1422] border-gray-800 text-gray-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>{isOnline ? '🟢' : '🔍'}</span>
-                          <div>
-                            <p className="font-bold">[{alert.category}] {alert.tier} - {alert.mission}</p>
-                            <p className="text-[10px] text-gray-400">{isOnline ? 'Status: ONLINE na API!' : 'Status: Monitorando...'}</p>
+              <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                {fissureAlerts.length === 0 ? (
+                  <div className="bg-[#0e1422] p-4 rounded-xl border border-dashed border-gray-800 text-center text-gray-500 text-xs">
+                    Nenhum alerta cadastrado. Adicione um acima!
+                  </div>
+                ) : (
+                  fissureAlerts.map(item => (
+                    <div key={item.id} className="bg-[#0e1422] p-3 rounded-xl border border-gray-800/60 flex justify-between items-center">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">🔔</span>
+                        <div>
+                          <div className="font-bold text-xs text-white">
+                            [{item.category}] {item.tier} - {item.mission}
                           </div>
+                          <div className="text-[10px] text-gray-400">Status: Monitorando...</div>
                         </div>
-
-                        <button 
-                          onClick={() => handleRemoveAlert(alert.id)}
-                          className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-400 px-2.5 py-1 rounded text-xs transition"
-                        >
-                          Excluir
-                        </button>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                      <button 
+                        onClick={() => handleRemoveAlert(item.id)}
+                        className="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
           </div>

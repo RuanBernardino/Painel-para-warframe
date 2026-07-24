@@ -7,6 +7,7 @@ import PlanetaryCyclesSection from '@/components/PlanetaryCyclesSection';
 import ResetTimersSection from '@/components/ResetTimersSection';
 import NotificationManager from '@/components/NotificationManager';
 import DashboardTabs from '@/components/DashboardTabs';
+import ArbitrationSection from '@/components/ArbitrationSection';
 
 export default function WarframeDashboard() {
   const [fissuresData, setFissuresData] = useState<any[]>([]);
@@ -29,20 +30,24 @@ export default function WarframeDashboard() {
   }, []);
 
   return (
-    <div className="p-6 bg-[#0b0f19] text-white min-h-screen font-sans relative">
+    <div className="p-6 bg-[#0b0f19] text-white min-h-screen font-sans relative space-y-6">
       
       {/* GERENCIADOR GLOBAL DE NOTIFICAÇÕES EM CASCATA */}
       <NotificationManager />
-      {/* Abas Superiores (Topo Limpo) */}
+
+      {/* BARRA SUPERIOR COM OS RELÓGIOS RETANGULARES INTEGRADOS */}
+      <ResetTimersSection />
+
+      {/* Ciclos Planetários */}
       <PlanetaryCyclesSection />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* O VoidFissuresSection agora gerencia o botão de alerta por conta própria */}
+        {/* Fissuras */}
         <VoidFissuresSection fissuresData={fissuresData} />
         
         <div className="flex flex-col gap-4">
+          <ArbitrationSection />
           <DashboardTabs />
-          <ResetTimersSection />
         </div>
       </div>
     </div>
