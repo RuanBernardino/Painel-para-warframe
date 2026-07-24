@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 
 interface FissureAlert {
   id: string;
@@ -8,11 +8,21 @@ interface FissureAlert {
   mission: string;
 }
 
-export default function FissureAlertModal() {
+interface FissureAlertModalProps {
+  fissuresData?: any[];
+  showAlertModal?: boolean;
+  setShowModalAlert?: Dispatch<SetStateAction<boolean>>;
+}
+
+export default function FissureAlertModal({
+  fissuresData = [],
+  showAlertModal,
+  setShowModalAlert,
+}: FissureAlertModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [fissureAlerts, setFissureAlerts] = useState<FissureAlert[]>([]);
   
-  // Exemplo de estados para os selects do formulário dentro da modal
+  // Estados para os selects do formulário dentro da modal
   const [category, setCategory] = useState('Normal');
   const [tier, setTier] = useState('Lith');
   const [mission, setMission] = useState('Survival');
@@ -52,7 +62,7 @@ export default function FissureAlertModal() {
     saveToStorage(fissureAlerts.filter(item => item.id !== id));
   };
 
-  const hasAlerts = fissureAlerts.length > 0;
+  hasAlerts = fissureAlerts.length > 0;
 
   return (
     <>
