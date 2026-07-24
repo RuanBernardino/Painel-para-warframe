@@ -33,6 +33,7 @@ function formatTimeLeft(ms: number): string {
 }
 
 export default function ArbitrationSection() {
+  const [isMounted, setIsMounted] = useState(false);
   const [now, setNow] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alerts, setAlerts] = useState<ArbitrationAlert[]>([]);
@@ -40,8 +41,9 @@ export default function ArbitrationSection() {
   
   const lastAlertedNodeRef = useRef<string | null>(null);
 
-  // Carrega alertas salvos no localStorage ao iniciar
+  // Carrega alertas salvos no localStorage ao iniciar e marca como montado
   useEffect(() => {
+    setIsMounted(true);
     try {
       const saved = localStorage.getItem('warframe_arbitration_alerts');
       if (saved) {
@@ -142,23 +144,24 @@ export default function ArbitrationSection() {
           <div className="flex items-center gap-2">
             {/* Botão de Alerta idêntico ao estilo das Fissuras */}
             <button 
-  onClick={() => setIsModalOpen(true)}
-  className={`text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border ${
-    alerts.length > 0 
-      ? 'bg-green-600/30 border-green-500 text-green-300 animate-pulse' 
-      : 'bg-[#0e1422] border-gray-700 text-gray-300 hover:bg-gray-800'
-  }`}
-  title="Gerenciar Alertas de Arbitragem"
->
-  <span>🔔</span>
-  {alerts.length > 0 && (
-    <span className="bg-green-500 text-black text-[10px] font-bold px-1.5 rounded-full">
-      {alerts.length}
-    </span>
-  )}
-</button>
+              onClick={() => setIsModalOpen(true)}
+              className={`text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border ${
+                alerts.length > 0 
+                  ? 'bg-green-600/30 border-green-500 text-green-300 animate-pulse' 
+                  : 'bg-[#0e1422] border-gray-700 text-gray-300 hover:bg-gray-800'
+              }`}
+              title="Gerenciar Alertas de Arbitragem"
+            >
+              <span>🔔</span>
+              {alerts.length > 0 && (
+                <span className="bg-green-500 text-black text-[10px] font-bold px-1.5 rounded-full">
+                  {alerts.length}
+                </span>
+              )}
+            </button>
+            
             <span className="font-mono text-xs text-yellow-300 bg-[#0e1422] px-2 py-0.5 rounded border border-gray-800">
-              {timeLeft}
+              {isMounted ? timeLeft : '--'}
             </span>
           </div>
         </div>
