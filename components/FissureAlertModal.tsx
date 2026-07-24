@@ -62,7 +62,7 @@ export default function FissureAlertModal({
     saveToStorage(fissureAlerts.filter(item => item.id !== id));
   };
 
-  hasAlerts = fissureAlerts.length > 0;
+  const hasAlerts = fissureAlerts.length > 0;
 
   return (
     <>
