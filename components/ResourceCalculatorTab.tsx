@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getDropsCache, saveDropsCache } from '@/lib/db'; // Importando o banco do navegador
 
 export default function ResourceCalculatorTab({ 
   onSelectResource 
@@ -10,11 +11,23 @@ export default function ResourceCalculatorTab({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // Estado para controlar a ordenação da lista de compras ('desc' = maior ➔ menor, 'asc' = menor ➔ maior)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  
-  // Estado para controlar quais itens da wishlist estão expandidos (padrão: fechados = false)
   const [expandedWishlist, setExpandedWishlist] = useState<{ [key: string]: boolean }>({});
+
+  // Controla se o dropdown de sugestões deve aparecer
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fecha o dropdown quando o usuário clica fora da área de busca
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   const [wishlist, setWishlist] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
@@ -28,16 +41,53 @@ export default function ResourceCalculatorTab({
     localStorage.setItem('warframe_crafting_wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
 
+  // CARREGAMENTO USANDO O INDEXEDDB (db.ts) COM VALIDAÇÃO DE 24 HORAS
   useEffect(() => {
     async function fetchWarframeItems() {
       try {
+        setLoading(true);
+
+        // 1. Tenta buscar os dados salvos no IndexedDB local
+        const cachedItems = await getDropsCache();
+
+        if (cachedItems && cachedItems.length > 0) {
+          setItems(cachedItems);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Se não houver cache ou já passaram 24 horas, busca na API externa
         const res = await fetch('https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json');
-        if (!res.ok) return;
+        if (!res.ok) throw new Error('Falha ao buscar dados');
+        
         const data = await res.json();
-        const craftableItems = data.filter((item: any) => item.components && item.components.length > 0);
+        
+        // FILTRA E ENXUGA O OBJETO: Guarda APENAS o que o app realmente usa
+        const craftableItems = data
+          .filter((item: any) => item.components && item.components.length > 0)
+          .map((item: any) => ({
+            name: item.name,
+            uniqueName: item.uniqueName,
+            components: item.components.map((comp: any) => ({
+              name: comp.name,
+              itemCount: comp.itemCount
+            }))
+          }));
+        
         setItems(craftableItems);
+
+        // 3. Salva de forma segura no IndexedDB (sem limite de 5MB do LocalStorage)
+        await saveDropsCache(craftableItems);
+
       } catch (err) {
         console.error('Erro ao buscar itens do Warframe:', err);
+        // Tenta carregar do cache do IndexedDB como fallback de emergência se a rede falhar
+        try {
+          const fallback = await getDropsCache();
+          if (fallback) setItems(fallback);
+        } catch (dbErr) {
+          console.error('Erro crítico no IndexedDB:', dbErr);
+        }
       } finally {
         setLoading(false);
       }
@@ -46,15 +96,16 @@ export default function ResourceCalculatorTab({
     fetchWarframeItems();
   }, []);
 
-  const filteredItems = searchTerm.trim() === '' ? [] : items.filter((item: any) =>
+  const filteredItems = !isSearchFocused || searchTerm.trim() === '' ? [] : items.filter((item: any) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 10);
 
   const handleAddWishlist = (item: any) => {
     if (!wishlist.some(w => w.uniqueName === item.uniqueName)) {
       setWishlist([...wishlist, item]);
-      setExpandedWishlist(prev => ({ ...prev, [item.uniqueName]: false })); // Entra fechado por padrão
+      setExpandedWishlist(prev => ({ ...prev, [item.uniqueName]: false }));
       setSearchTerm('');
+      setIsSearchFocused(false);
     }
   };
 
@@ -76,7 +127,6 @@ export default function ResourceCalculatorTab({
     }
   };
 
-  // UNIFICA E SOMA TUDO COMO UMA LISTA DE COMPRAS
   const unifiedShoppingList = wishlist.reduce((acc, item) => {
     if (item.components) {
       item.components.forEach((comp: any) => {
@@ -112,7 +162,7 @@ export default function ResourceCalculatorTab({
     <div className="flex flex-col gap-4 text-gray-200">
       
       {/* BARRA DE BUSCA */}
-      <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-800 flex flex-col gap-2 relative">
+      <div ref={searchContainerRef} className="bg-gray-900/60 p-3 rounded-lg border border-gray-800 flex flex-col gap-2 relative">
         <label className="block text-xs text-gray-400">Buscar Item na Base de Dados do Jogo:</label>
         <input
           type="text"
@@ -120,6 +170,7 @@ export default function ResourceCalculatorTab({
           disabled={loading}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onFocus={() => setIsSearchFocused(true)}
           className="w-full bg-gray-950 border border-gray-700 text-sm rounded-lg p-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
         />
 
@@ -142,7 +193,6 @@ export default function ResourceCalculatorTab({
       {/* GRADE: ITENS EM PRODUÇÃO + LISTA DE COMPRAS UNIFICADA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        {/* Sua Lista de Foco */}
         <div className="bg-gray-900/40 border border-gray-800 rounded-lg p-3">
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Itens em Produção</h4>
           {wishlist.length === 0 ? (
@@ -154,7 +204,6 @@ export default function ResourceCalculatorTab({
                 return (
                   <div key={item.uniqueName} className="bg-gray-950/70 border border-gray-800 rounded-lg overflow-hidden transition">
                     
-                    {/* CABEÇALHO DO ITEM */}
                     <div className="flex justify-between items-center p-2.5 bg-gray-900/80 gap-2">
                       <span className="font-semibold text-xs text-white truncate">{item.name}</span>
                       
@@ -176,7 +225,6 @@ export default function ResourceCalculatorTab({
                       </div>
                     </div>
 
-                    {/* COMPONENTES DO ITEM */}
                     {isExpanded && (
                       <div className="p-2.5 flex flex-col gap-1 border-t border-gray-800/60 bg-gray-950/30">
                         {item.components?.map((comp: any, idx: number) => (
@@ -200,7 +248,6 @@ export default function ResourceCalculatorTab({
           )}
         </div>
 
-        {/* LISTA DE COMPRAS UNIFICADA COM ÍCONE DE ORDENAÇÃO ELEGANTE */}
         <div className="bg-gray-900/40 border border-gray-800 rounded-lg p-3 flex flex-col">
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Lista de Compras / Total Geral</h4>

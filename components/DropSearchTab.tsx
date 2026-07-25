@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getDropsCache, saveDropsCache } from '@/lib/db';
 
 const ALLOWED_CATEGORIES = [
   'Primary', 'Secondary', 'Melee', 'Sentinel', 
   'Warframe', 'Warframes', 'Suits', 'Arch-gun', 'Arch-melee', 'Archwing', 
-  'Railjack', 'Misc', 'Arcanes', 'Fish'
+  'Railjack', 'Misc', 'Arcanes', 'Fish', 'Mods'
 ];
 
 const RESOURCE_PLANETS: { [key: string]: string } = {
@@ -41,6 +42,9 @@ export default function DropSearchTab({
   const [expandedItems, setExpandedItems] = useState<{ [key: string]: boolean }>({});
   const [collapsedGroups, setCollapsedGroups] = useState<{ [key: string]: boolean }>({});
 
+  // Referência para detectar cliques fora do componente de busca
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   const [selectedDropItems, setSelectedDropItems] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('warframe_selected_drop_list');
@@ -57,6 +61,19 @@ export default function DropSearchTab({
       .trim();
   };
 
+  // Fecha o dropdown se clicar fora dele
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setSearchTerm(''); // Limpa o termo ou você pode criar um estado específico 'setShowDropdown(false)'
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   useEffect(() => {
     if (initialSearch) {
       setSearchTerm(initialSearch);
@@ -70,14 +87,27 @@ export default function DropSearchTab({
   useEffect(() => {
     async function fetchData() {
       try {
-        const [resItems, resDrops] = await Promise.all([
-          fetch('https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json'),
-          fetch('https://raw.githubusercontent.com/WFCD/warframe-drop-data/gh-pages/data/pc/dropData.json')
-        ]);
-        
-        if (resItems.ok) {
-          const itemsJson = await resItems.json();
-          
+        setLoading(true);
+        let itemsJson = await getDropsCache<any[]>('wf_all_items');
+        let dropsJson = await getDropsCache<any>('wf_drop_data');
+
+        if (!itemsJson) {
+          const resItems = await fetch('https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json');
+          if (resItems.ok) {
+            itemsJson = await resItems.json();
+            await saveDropsCache('wf_all_items', itemsJson);
+          }
+        }
+
+        if (!dropsJson) {
+          const resDrops = await fetch('https://raw.githubusercontent.com/WFCD/warframe-drop-data/main/data/pc/dropData.json');
+          if (resDrops.ok) {
+            dropsJson = await resDrops.json();
+            await saveDropsCache('wf_drop_data', dropsJson);
+          }
+        }
+
+        if (itemsJson) {
           const filteredBaseItems = itemsJson.filter((i: any) => {
             const category = (i.category || '').toLowerCase();
             const type = (i.type || '').toLowerCase();
@@ -103,7 +133,9 @@ export default function DropSearchTab({
               category.includes('warframe') || 
               type.includes('warframe') ||
               category.includes('suit') ||
-              type.includes('suit')
+              type.includes('suit') ||
+              category.includes('mods') ||
+              type.includes('mods')
             );
 
             if (!isAllowed) return false;
@@ -151,12 +183,11 @@ export default function DropSearchTab({
           }
         }
 
-        if (resDrops.ok) {
-          const dropsJson = await resDrops.json();
+        if (dropsJson) {
           setDropsData(dropsJson);
         }
       } catch (err) {
-        console.error('Erro ao buscar dados:', err);
+        console.error('[DropSearchTab] Erro crítico ao processar dados:', err);
       } finally {
         setLoading(false);
       }
@@ -434,8 +465,8 @@ export default function DropSearchTab({
   return (
     <div className="flex flex-col gap-4 text-gray-200 max-w-4xl mx-auto w-full">
       
-      {/* BARRA DE PESQUISA */}
-      <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-800 flex flex-col gap-2 relative overflow-visible z-50">
+      {/* Container de busca com a ref para o clique fora */}
+      <div ref={searchContainerRef} className="bg-gray-900/60 p-3 rounded-lg border border-gray-800 flex flex-col gap-2 relative overflow-visible z-50">
         <label className="block text-xs text-gray-400">Buscar Warframe ou Item:</label>
         <input
           type="text"
@@ -469,7 +500,6 @@ export default function DropSearchTab({
         )}
       </div>
 
-      {/* PAINEL DE ITENS SELECIONADOS */}
       <div className="bg-gray-900/40 border border-gray-800 rounded-lg p-4 flex flex-col gap-3">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Itens Rastreados (Warframes & Primes)</h4>
         
@@ -551,7 +581,6 @@ export default function DropSearchTab({
                               {!isGroupCollapsed && (
                                 <div className="flex flex-col gap-3">
                                   
-                                  {/* DROPS / RELÍQUIAS ORDENADAS POR NOME/TIER */}
                                   <div className="flex flex-col gap-1.5">
                                     <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">📍 Onde Encontrar / Relíquias Void (Ordenadas por Nome/Tier):</span>
                                     {comp.drops.length === 0 ? (
@@ -572,7 +601,6 @@ export default function DropSearchTab({
                                     )}
                                   </div>
 
-                                  {/* MATERIAIS DE CRAFT */}
                                   <div className="flex flex-col gap-1.5 pt-2 border-t border-gray-800/40">
                                     <span className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider">🛠️ Materiais para Construir na Fundição:</span>
                                     {comp.craftIngredients.length === 0 ? (

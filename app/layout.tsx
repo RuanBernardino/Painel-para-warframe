@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import DatabasePreloader from "@/components/DatabasePreloader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,10 +29,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0b101d] text-white">
+        <DatabasePreloader />
+
         <main className="flex-1">
           {children}
         </main>
-
       
         <footer className="w-full py-4 text-center border-t border-gray-800/60 bg-[#0e1422]/50 backdrop-blur-md">
           <p className="text-xs text-gray-500 font-mono">
