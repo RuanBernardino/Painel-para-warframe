@@ -48,9 +48,9 @@ export default function ResourceCalculatorTab({
         setLoading(true);
 
         // 1. Tenta buscar os dados salvos no IndexedDB local
-        const cachedItems = await getDropsCache();
+        const cachedItems = await getDropsCache('drops_cache');
 
-        if (cachedItems && cachedItems.length > 0) {
+        if (Array.isArray(cachedItems) && cachedItems.length > 0) {
           setItems(cachedItems);
           setLoading(false);
           return;
@@ -77,14 +77,14 @@ export default function ResourceCalculatorTab({
         setItems(craftableItems);
 
         // 3. Salva de forma segura no IndexedDB (sem limite de 5MB do LocalStorage)
-        await saveDropsCache(craftableItems);
+        await saveDropsCache('drops_cache', items);
 
       } catch (err) {
         console.error('Erro ao buscar itens do Warframe:', err);
         // Tenta carregar do cache do IndexedDB como fallback de emergência se a rede falhar
         try {
-          const fallback = await getDropsCache();
-          if (fallback) setItems(fallback);
+          const fallback = await getDropsCache('drops_cache');
+          if (Array.isArray(fallback)) setItems(fallback);
         } catch (dbErr) {
           console.error('Erro crítico no IndexedDB:', dbErr);
         }
