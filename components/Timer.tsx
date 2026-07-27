@@ -17,7 +17,7 @@ export default function Timer({ targetDate, onExpire }: TimerProps) {
       const difference = new Date(targetDate).getTime() - new Date().getTime();
 
       if (difference <= 0) {
-        setTimeLeft('0s');
+        setTimeLeft('Transicionando');
         
         // Quando zerar, se ainda não estiver tentando agressivamente, avisa o pai
         if (!isRetrying && onExpire) {

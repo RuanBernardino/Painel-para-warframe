@@ -11,9 +11,81 @@ const ALL_MISSION_TYPES = [
   'Conjunction Survival', 'Void Cascade', 'Void Flood', 'Void Armageddon'
 ];
 
+// 🌐 Dicionário de tradução dos tipos de missão
+const MISSION_TRANSLATIONS: Record<string, string> = {
+  'Alchemy': 'Alquimia',
+  'Defection': 'Deserção',
+  'Defense': 'Defesa',
+  'Disruption': 'Interrupção',
+  'Excavation': 'Escavação',
+  'Infested Salvage': 'Salvamento Infestado',
+  'Interception': 'Intercepção',
+  'Mirror Defense': 'Defesa Espelhada',
+  'Survival': 'Sobrevivência',
+  'Conjunction Survival': 'Sobrevivência em Conjunção',
+  'Void Cascade': 'Cascata do Vazio',
+  'Void Flood': 'Inundação do Vazio',
+  'Void Armageddon': 'Armagedom do Vazio'
+};
+
+// 🌐 Dicionário de tradução dos meses
+const MONTH_TRANSLATIONS: Record<string, string> = {
+  'January': 'Janeiro',
+  'February': 'Fevereiro',
+  'March': 'Março',
+  'April': 'Abril',
+  'May': 'Maio',
+  'June': 'Junho',
+  'July': 'Julho',
+  'August': 'Agosto',
+  'September': 'Setembro',
+  'October': 'Outubro',
+  'November': 'Novembro',
+  'December': 'Dezembro'
+};
+
+// 🌐 Dicionário de tradução dos dias da semana (abreviações)
+const WEEKDAY_TRANSLATIONS: Record<string, string> = {
+  'Mon': 'Seg',
+  'Tue': 'Ter',
+  'Wed': 'Qua',
+  'Thu': 'Qui',
+  'Fri': 'Sex',
+  'Sat': 'Sáb',
+  'Sun': 'Dom'
+};
+
+function translateMissionType(type: string): string {
+  if (!type) return '';
+  const trimmed = type.trim();
+  return MISSION_TRANSLATIONS[trimmed] || trimmed;
+}
+
+// 🌐 Função para traduzir o dia da semana e o mês da string de data
+function translateDateString(dateStr: string): string {
+  if (!dateStr) return '';
+  let translated = dateStr;
+
+  // Traduz o dia da semana se houver
+  for (const [enDay, ptDay] of Object.entries(WEEKDAY_TRANSLATIONS)) {
+    if (translated.includes(enDay)) {
+      translated = translated.replace(enDay, ptDay);
+    }
+  }
+
+  // Traduz o mês
+  for (const [enMonth, ptMonth] of Object.entries(MONTH_TRANSLATIONS)) {
+    if (translated.includes(enMonth)) {
+      translated = translated.replace(enMonth, ptMonth);
+    }
+  }
+
+  return translated;
+}
+
 interface ArbitrationAlert {
   id: string;
-  type: string; // Ex: 'Survival', 'Defense', etc.
+  type: string;
 }
 
 function parseArbDateTime(dateStr: string, timeStr: string, year: number): Date {
@@ -41,7 +113,6 @@ export default function ArbitrationSection() {
   
   const lastAlertedNodeRef = useRef<string | null>(null);
 
-  // Carrega alertas salvos no localStorage ao iniciar e marca como montado
   useEffect(() => {
     setIsMounted(true);
     try {
@@ -54,7 +125,6 @@ export default function ArbitrationSection() {
     }
   }, []);
 
-  // Salva alertas no localStorage sempre que houver mudança
   const saveAlertsToStorage = (updatedAlerts: ArbitrationAlert[]) => {
     setAlerts(updatedAlerts);
     try {
@@ -89,37 +159,31 @@ export default function ArbitrationSection() {
   const arbitration = activeIndex >= 0 ? arbitrationWithDates[activeIndex] : null;
   const nextArbitration = activeIndex >= 0 ? arbitrationWithDates[activeIndex + 1] : null;
 
-  // 🔔 VERIFICAÇÃO E DISPARO DE ALARME BASEADO NOS ALERTAS CADASTRADOS
   useEffect(() => {
     if (!arbitration || alerts.length === 0) return;
-
     if (lastAlertedNodeRef.current === arbitration.node) return;
 
-    // Checa se a missão atual bate com algum dos alertas cadastrados pelo usuário
     const matchedAlert = alerts.find(alert => 
       arbitration.type.toLowerCase().includes(alert.type.toLowerCase())
     );
 
     if (matchedAlert) {
+      const translatedName = translateMissionType(arbitration.type);
       triggerGlobalNotification(
         'general',
         '🚨 Alerta de Arbitragem!',
-        `${arbitration.type} em ${arbitration.node} (${arbitration.faction})`
+        `${translatedName} em ${arbitration.node} (${arbitration.faction})`
       );
-
       lastAlertedNodeRef.current = arbitration.node;
     }
   }, [arbitration, alerts]);
 
   const handleAddAlert = () => {
-    // Evita duplicados do mesmo tipo
     if (alerts.some(a => a.type.toLowerCase() === selectedMissionType.toLowerCase())) return;
-
     const newAlert: ArbitrationAlert = {
       id: Math.random().toString(36).substring(2, 9),
       type: selectedMissionType,
     };
-
     saveAlertsToStorage([...alerts, newAlert]);
   };
 
@@ -138,11 +202,10 @@ export default function ArbitrationSection() {
       <div className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 text-white w-full">
         <div className="flex justify-between items-center mb-3 border-b border-gray-800 pb-2">
           <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
-            <span>⚔️</span> ARBITRATION (ARBITRAGEM)
+            <span>⚔️</span> ARBITRAGEM
           </h3>
           
           <div className="flex items-center gap-2">
-            {/* Botão de Alerta idêntico ao estilo das Fissuras */}
             <button 
               onClick={() => setIsModalOpen(true)}
               className={`text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border ${
@@ -168,21 +231,26 @@ export default function ArbitrationSection() {
 
         {arbitration ? (
           <div className="space-y-3 text-xs">
+            {/* Missão Atual */}
             <div className="bg-[#0e1422] p-2.5 rounded-lg border border-gray-800/60 flex justify-between items-center">
               <div>
-                <div className="font-bold text-white text-sm">{arbitration.node}</div>
-                <div className="text-gray-400 text-[11px]">{arbitration.type} • {arbitration.faction}</div>
+                <div className="font-bold text-white text-sm">{translateMissionType(arbitration.type)} • {arbitration.faction}</div>
+                <div className="text-gray-400 text-[11px]">
+                  {arbitration.node}
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              {/* Início da missão atual com data totalmente traduzida */}
               <div className="bg-[#0e1422] p-2 rounded-lg border border-gray-800/60">
-                <span className="text-gray-400 text-[10px] uppercase block mb-1">Início</span>
+                <span className="text-gray-400 text-[10px] uppercase block mb-1">Início da Missão</span>
                 <span className="font-bold text-green-300 text-sm">
-                  {arbitration.date} às {arbitration.time}
+                  {translateDateString(arbitration.date)} às {arbitration.time}
                 </span>
               </div>
 
+              {/* Bônus de Recurso */}
               <div className="bg-[#0e1422] p-2 rounded-lg border border-gray-800/60">
                 <span className="text-gray-400 text-[10px] uppercase block mb-1">Bônus de Recurso</span>
                 <span className="font-bold text-yellow-300 text-sm">
@@ -190,6 +258,24 @@ export default function ArbitrationSection() {
                 </span>
               </div>
             </div>
+
+            {/* Próxima Arbitragem com data traduzida */}
+            {nextArbitration && (
+              <div className="bg-[#0e1422]/60 p-2.5 rounded-lg border border-gray-800/40 flex flex-col gap-1">
+                <span className="text-[10px] text-gray-400 uppercase font-semibold">Próxima Arbitragem:</span>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-gray-200 text-xs">{translateMissionType(nextArbitration.type)} • {nextArbitration.faction}</span>
+                    <span className="text-gray-400 text-[11px] block">
+                      {nextArbitration.node}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-blue-400 font-mono">
+                    {translateDateString(nextArbitration.date)} às {nextArbitration.time}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-[#0e1422] p-4 rounded-lg border border-gray-800/60 text-center text-gray-400 text-xs">
@@ -202,8 +288,6 @@ export default function ArbitrationSection() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-[#131b2e] border border-gray-800 rounded-2xl max-w-lg w-full p-6 text-white shadow-2xl space-y-5">
-            
-            {/* Header da Modal */}
             <div className="flex justify-between items-center border-b border-gray-800 pb-3">
               <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
                 <span>🎯</span> GERENCIAR ALERTAS DE ARBITRAGEM
@@ -216,10 +300,8 @@ export default function ArbitrationSection() {
               </button>
             </div>
 
-            {/* Criar Novo Alerta */}
             <div className="bg-[#0e1422] p-4 rounded-xl border border-gray-800/60 space-y-3">
               <span className="text-xs font-bold text-gray-300 block">Criar Novo Alerta:</span>
-              
               <div className="space-y-2">
                 <label className="text-[10px] text-gray-400 uppercase block">Tipo de Missão:</label>
                 <select 
@@ -228,7 +310,9 @@ export default function ArbitrationSection() {
                   className="w-full bg-[#131b2e] border border-gray-700 text-white p-2 rounded-lg text-xs focus:outline-none focus:border-yellow-500"
                 >
                   {ALL_MISSION_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>
+                      {translateMissionType(type)}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -241,7 +325,6 @@ export default function ArbitrationSection() {
               </button>
             </div>
 
-            {/* Alertas Cadastrados */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-gray-300 block">
                 Alertas Cadastrados ({alerts.length}):
@@ -249,7 +332,7 @@ export default function ArbitrationSection() {
 
               <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                 {alerts.length === 0 ? (
-                  <div className="bg-[#0e1422] p-4 rounded-xl border border-dashed border-gray-800 text-center text-gray-500 text-xs">
+                  <div className="bg-[#0e1422] p-4 rounded-lg border border-dashed border-gray-800 text-center text-gray-500 text-xs">
                     Nenhum alerta cadastrado. Adicione um acima!
                   </div>
                 ) : (
@@ -258,7 +341,9 @@ export default function ArbitrationSection() {
                       <div className="flex items-center gap-2.5">
                         <span className="text-base">🔔</span>
                         <div>
-                          <div className="font-bold text-xs text-white">Missão: {alert.type}</div>
+                          <div className="font-bold text-xs text-white">
+                            Missão: {translateMissionType(alert.type)}
+                          </div>
                           <div className="text-[10px] text-gray-400">Status: Monitorando...</div>
                         </div>
                       </div>
@@ -273,7 +358,6 @@ export default function ArbitrationSection() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       )}

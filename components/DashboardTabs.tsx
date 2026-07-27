@@ -15,7 +15,7 @@ export default function DashboardTabs() {
   };
 
   const tabs = [
-    { id: 'circuit', label: 'The Circuit (Duviri)' },
+    { id: 'circuit', label: 'O Circuito (Duviri)' },
     { id: 'calculator', label: 'Crafting' },
     { id: 'drops', label: 'Busca de Drops' },
   ];

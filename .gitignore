@@ -40,4 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-app/api-explorer/page.tsx
+app/api-explorer/
