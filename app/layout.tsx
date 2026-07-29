@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import DatabasePreloader from "@/components/DatabasePreloader";
 
+// 1. IMPORTAR O ANALYTICS DA VERCEL
+import { Analytics } from "@vercel/analytics/react";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -48,6 +51,9 @@ export default function RootLayout({
             </a>
           </p>
         </footer>
+
+        {/* 2. ADICIONAR O COMPONENTE AQUI */}
+        <Analytics />
       </body>
     </html>
   );

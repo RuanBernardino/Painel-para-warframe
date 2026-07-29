@@ -1,0 +1,170 @@
+.loader-orbit {
+  --color-royal-azure: #2563eb;
+  --color-rich-cerulean: #3b82f6;
+  --color-dark-goldenrod: #d97706;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 24, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+// empilha as três animações exatamente no mesmo ponto central
+.orbit-layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// anel pontilhado
+.dotted-loader {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  z-index: 10;
+}
+
+.dotted-loader::after,
+.dotted-loader::before {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  top: calc(50% - 34px);
+  left: calc(50% - 34px);
+  border-radius: 50%;
+  border: 4px var(--color-royal-azure);
+  border-style: dotted solid dotted solid;
+  animation: turn-left 1.5s linear infinite;
+  box-shadow: 0 0 8px var(--color-royal-azure);
+  -webkit-animation: turn-left 1.5s linear infinite;
+}
+
+.dotted-loader::before {
+  top: calc(50% - 44px);
+  left: calc(50% - 44px);
+  width: 80px;
+  height: 80px;
+  border-style: dotted dotted solid solid;
+  animation: turn-right 1.5s linear infinite;
+  -webkit-animation: turn-right 1.5s linear infinite;
+}
+
+@keyframes turn-right {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes turn-left {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+// pontos com efeito goo
+.container {
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: auto;
+  filter: url('#goo');
+  animation: rotate-move 2s ease-in-out infinite;
+}
+
+.dot {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: #000;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+
+.dot-3 {
+  background-color: var(--color-dark-goldenrod);
+  animation: dot-3-move 2s ease infinite, index 6s ease infinite;
+}
+
+.dot-2 {
+  background-color: var(--color-rich-cerulean);
+  animation: dot-2-move 2s ease infinite, index 6s -4s ease infinite;
+}
+
+.dot-1 {
+  background-color: var(--color-royal-azure);
+  animation: dot-1-move 2s ease infinite, index 6s -2s ease infinite;
+}
+
+@keyframes dot-3-move {
+  20% {transform: scale(1)}
+  45% {transform: translateY(-14px) scale(.45)}
+  60% {transform: translateY(-68px) scale(.45)}
+  80% {transform: translateY(-68px) scale(.45)}
+  100% {transform: translateY(0px) scale(1)}
+}
+
+@keyframes dot-2-move {
+  20% {transform: scale(1)}
+  45% {transform: translate(-12px, 9px) scale(.45)}
+  60% {transform: translate(-60px, 45px) scale(.45)}
+  80% {transform: translate(-60px, 45px) scale(.45)}
+  100% {transform: translateY(0px) scale(1)}
+}
+
+@keyframes dot-1-move {
+  20% {transform: scale(1)}
+  45% {transform: translate(12px, 9px) scale(.45)}
+  60% {transform: translate(60px, 45px) scale(.45)}
+  80% {transform: translate(60px, 45px) scale(.45)}
+  100% {transform: translateY(0px) scale(1)}
+}
+
+@keyframes rotate-move {
+  55% {transform: translate(-50%, -50%) rotate(0deg)}
+  80% {transform: translate(-50%, -50%) rotate(360deg)}
+  100% {transform: translate(-50%, -50%) rotate(360deg)}
+}
+
+@keyframes index {
+  0%, 100% {z-index: 3}
+  33.3% {z-index: 2}
+  66.6% {z-index: 1}
+}
+
+// três paths girando
+.three-svg {
+overflow: visible;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% - 3px), calc(-50% - 3px));
+  width: 64px;   
+  height: 64px;
+  
+}
+
+.three-svg .path-1 {
+  filter: drop-shadow(0 0 8px var(--color-royal-azure));
+}
+
+.three-svg .path-2 {
+  filter: drop-shadow(0 0 8px var(--color-rich-cerulean));
+}
+
+.three-svg .path-3 {
+  filter: drop-shadow(0 0 8px var(--color-dark-goldenrod));
+}

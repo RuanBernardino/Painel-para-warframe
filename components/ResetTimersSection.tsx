@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import ArchonHuntSection from '@/components/ArchonHuntSection';
 
 export default function ResetTimersSection() {
   const [timers, setTimers] = useState({
@@ -9,37 +10,35 @@ export default function ResetTimersSection() {
     baroLocation: ''
   });
 
+  const [isArchonPopupOpen, setIsArchonPopupOpen] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     let rawData: any = null;
 
-    // 1. Função que apenas busca a API (pesada) e guarda os dados crus
     async function fetchTimersData() {
       try {
         const res = await fetch('https://api.warframestat.us/pc');
         rawData = await res.json();
-        updateCalculations(); // Atualiza na hora que baixa
+        updateCalculations();
       } catch (err) {
         console.error('Erro ao buscar reset timers:', err);
       }
     }
 
-    // 2. Função leve que apenas faz as contas com o tempo atual do PC (roda segundo a segundo)
     function updateCalculations() {
       const now = new Date();
       
-      // Reset Diário (00:00 UTC)
       const nextMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
       const diffDaily = nextMidnight.getTime() - now.getTime();
       const dailyStr = formatTimeDiff(diffDaily);
 
-      // Reset Semanal (Segunda-feira 00:00 UTC)
       const dayOfWeek = now.getUTCDay();
       const daysUntilMonday = (1 + 7 - dayOfWeek) % 7 || 7;
       const nextWeekly = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilMonday, 0, 0, 0));
       const diffWeekly = nextWeekly.getTime() - now.getTime();
       const weeklyStr = formatTimeDiffWeekly(diffWeekly);
 
-      // Baro Ki'Teer
       let baroStr = 'Chegou / Ativo!';
       let locationStr = '';
       if (rawData && rawData.voidTrader) {
@@ -74,18 +73,22 @@ export default function ResetTimersSection() {
       });
     }
 
-    // Executa a primeira busca na API ao abrir a página
     fetchTimersData();
 
-    // REQUISIÇÃO DA API: Acontece apenas de 1 em 1 minuto (60000ms) -> Economia total de rede e CPU
     const apiInterval = setInterval(fetchTimersData, 60000);
-
-    // RELÓGIO LOCAL: Atualiza a tela segundo a segundo (1000ms) sem mexer na rede
     const tickInterval = setInterval(updateCalculations, 1000);
+
+    function handleClickOutside(event: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setIsArchonPopupOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       clearInterval(apiInterval);
       clearInterval(tickInterval);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -107,7 +110,7 @@ export default function ResetTimersSection() {
   }
 
   return (
-    <div className="bg-[#131b2e] px-4 py-3 rounded-xl border border-gray-800 text-white w-full flex flex-col md:flex-row items-center justify-between gap-4">
+    <div className="bg-[#131b2e] px-4 py-3 rounded-xl border border-gray-800 text-white w-full flex flex-col md:flex-row items-center justify-between gap-4 relative">
       <div className="flex items-center gap-3 whitespace-nowrap">
         <img 
           src="/favicon.ico" 
@@ -151,13 +154,61 @@ export default function ResetTimersSection() {
         </div>
       </div>
 
-      {/*
-      <button
-        type="button"
-        className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap"
-      >
-        <span>⚙️</span> 
-      </button>*/}
+      <div className="flex items-center gap-2 relative" ref={popupRef}>
+        <button
+          type="button"
+          onClick={() => setIsArchonPopupOpen(!isArchonPopupOpen)}
+          className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+          title="Caçada Archon"
+        >
+          <img 
+            src="/IconNarmer.webp" 
+            alt="Narmer" 
+            className="w-5 h-5 object-contain" 
+          />
+        </button>
+          
+        <button
+          type="button"
+          className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        >
+          <span>⚙️</span> 
+        </button>
+
+        {isArchonPopupOpen && (
+          <div className="absolute right-0 top-12 z-50 w-[380px] sm:w-[420px] bg-[#0e1422] border border-gray-800 rounded-xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 mb-3 border-b border-gray-800">
+              
+              {/* Lado esquerdo: Título */}
+              <span className="text-xs font-mono text-rose-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                <img 
+                 src="/IconNarmer.webp" 
+                 alt="Narmer" 
+                 className="w-5 h-5 object-contain" 
+                /> Caçada Archon
+              </span>
+              
+              {/* Lado direito: Timer ao lado do botão X */}
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs font-bold text-rose-400">
+                  {timers.weekly}
+                </span>
+
+                <button 
+                  onClick={() => setIsArchonPopupOpen(false)}
+                  className="text-gray-400 hover:text-white font-mono text-xs bg-gray-800/60 hover:bg-gray-700 px-2 py-0.5 rounded transition cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[400px] overflow-y-auto">
+              <ArchonHuntSection />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
