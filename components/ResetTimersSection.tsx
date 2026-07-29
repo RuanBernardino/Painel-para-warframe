@@ -10,67 +10,83 @@ export default function ResetTimersSection() {
   });
 
   useEffect(() => {
-    async function fetchTimers() {
+    let rawData: any = null;
+
+    // 1. Função que apenas busca a API (pesada) e guarda os dados crus
+    async function fetchTimersData() {
       try {
         const res = await fetch('https://api.warframestat.us/pc');
-        const data = await res.json();
-
-        const now = new Date();
-        
-        // Reset Diário (00:00 UTC)
-        const nextMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
-        const diffDaily = nextMidnight.getTime() - now.getTime();
-        const dailyStr = formatTimeDiff(diffDaily);
-
-        // Reset Semanal (Segunda-feira 00:00 UTC)
-        const dayOfWeek = now.getUTCDay();
-        const daysUntilMonday = (1 + 7 - dayOfWeek) % 7 || 7;
-        const nextWeekly = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilMonday, 0, 0, 0));
-        const diffWeekly = nextWeekly.getTime() - now.getTime();
-        const weeklyStr = formatTimeDiffWeekly(diffWeekly);
-
-        // Baro Ki'Teer
-        let baroStr = 'Chegou / Ativo!';
-        let locationStr = '';
-        if (data.voidTrader) {
-          const baroDate = new Date(data.voidTrader.activation).getTime();
-          const diffBaro = baroDate - now.getTime();
-          
-          // Extrai apenas o nome principal do local (ex: "Larunda, Mercury" -> "Larunda (Mercury)")
-          const rawLocation = data.voidTrader.location || '';
-          const cleanLocation = rawLocation.includes(',') 
-            ? `${rawLocation.split(',')[0].trim()} (${rawLocation.split(',')[1].trim()})` 
-            : rawLocation;
-
-          if (diffBaro > 0) {
-            baroStr = formatTimeDiffWeekly(diffBaro);
-            locationStr = cleanLocation ? `Destino: ${cleanLocation}` : '';
-          } else {
-            const expiryBaro = new Date(data.voidTrader.expiry).getTime();
-            const diffExpiry = expiryBaro - now.getTime();
-            if (diffExpiry > 0) {
-              baroStr = `Ativo (${formatTimeDiffWeekly(diffExpiry)})`;
-              locationStr = cleanLocation ? `Local: ${cleanLocation}` : '';
-            } else {
-              baroStr = 'transitando';
-            }
-          }
-        }
-
-        setTimers({
-          weekly: weeklyStr,
-          daily: dailyStr,
-          baro: baroStr,
-          baroLocation: locationStr
-        });
+        rawData = await res.json();
+        updateCalculations(); // Atualiza na hora que baixa
       } catch (err) {
         console.error('Erro ao buscar reset timers:', err);
       }
     }
 
-    fetchTimers();
-    const interval = setInterval(fetchTimers, 1000);
-    return () => clearInterval(interval);
+    // 2. Função leve que apenas faz as contas com o tempo atual do PC (roda segundo a segundo)
+    function updateCalculations() {
+      const now = new Date();
+      
+      // Reset Diário (00:00 UTC)
+      const nextMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+      const diffDaily = nextMidnight.getTime() - now.getTime();
+      const dailyStr = formatTimeDiff(diffDaily);
+
+      // Reset Semanal (Segunda-feira 00:00 UTC)
+      const dayOfWeek = now.getUTCDay();
+      const daysUntilMonday = (1 + 7 - dayOfWeek) % 7 || 7;
+      const nextWeekly = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilMonday, 0, 0, 0));
+      const diffWeekly = nextWeekly.getTime() - now.getTime();
+      const weeklyStr = formatTimeDiffWeekly(diffWeekly);
+
+      // Baro Ki'Teer
+      let baroStr = 'Chegou / Ativo!';
+      let locationStr = '';
+      if (rawData && rawData.voidTrader) {
+        const baroDate = new Date(rawData.voidTrader.activation).getTime();
+        const diffBaro = baroDate - now.getTime();
+        
+        const rawLocation = rawData.voidTrader.location || '';
+        const cleanLocation = rawLocation.includes(',') 
+          ? `${rawLocation.split(',')[0].trim()} (${rawLocation.split(',')[1].trim()})` 
+          : rawLocation;
+
+        if (diffBaro > 0) {
+          baroStr = formatTimeDiffWeekly(diffBaro);
+          locationStr = cleanLocation ? `Destino: ${cleanLocation}` : '';
+        } else {
+          const expiryBaro = new Date(rawData.voidTrader.expiry).getTime();
+          const diffExpiry = expiryBaro - now.getTime();
+          if (diffExpiry > 0) {
+            baroStr = `Ativo (${formatTimeDiffWeekly(diffExpiry)})`;
+            locationStr = cleanLocation ? `Local: ${cleanLocation}` : '';
+          } else {
+            baroStr = 'transitando';
+          }
+        }
+      }
+
+      setTimers({
+        weekly: weeklyStr,
+        daily: dailyStr,
+        baro: baroStr,
+        baroLocation: locationStr
+      });
+    }
+
+    // Executa a primeira busca na API ao abrir a página
+    fetchTimersData();
+
+    // REQUISIÇÃO DA API: Acontece apenas de 1 em 1 minuto (60000ms) -> Economia total de rede e CPU
+    const apiInterval = setInterval(fetchTimersData, 60000);
+
+    // RELÓGIO LOCAL: Atualiza a tela segundo a segundo (1000ms) sem mexer na rede
+    const tickInterval = setInterval(updateCalculations, 1000);
+
+    return () => {
+      clearInterval(apiInterval);
+      clearInterval(tickInterval);
+    };
   }, []);
 
   function formatTimeDiff(ms: number) {
@@ -92,8 +108,6 @@ export default function ResetTimersSection() {
 
   return (
     <div className="bg-[#131b2e] px-4 py-3 rounded-xl border border-gray-800 text-white w-full flex flex-col md:flex-row items-center justify-between gap-4">
-      
-      {/* Logo e Título do Site corrigidos */}
       <div className="flex items-center gap-3 whitespace-nowrap">
         <img 
           src="/favicon.ico" 
@@ -107,10 +121,7 @@ export default function ResetTimersSection() {
         </div>
       </div>
 
-      {/* Grid Retangular com os 3 Relógios */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full md:w-auto flex-1 max-w-4xl">
-        
-        {/* BARO */}
         <div className="bg-[#0e1422] px-3 py-2 rounded-lg border border-gray-800/60 flex flex-col justify-center">
           <div className="flex justify-between items-center">
             <span className="text-gray-300 font-medium text-xs">Baro Ki'Teer</span>
@@ -123,7 +134,6 @@ export default function ResetTimersSection() {
           )}
         </div>
 
-        {/* WEEKLY */}
         <div className="bg-[#0e1422] px-3 py-2 rounded-lg border border-gray-800/60 flex items-center justify-between gap-3">
           <div>
             <span className="text-gray-300 font-medium text-xs block">Reset Semanal</span>
@@ -132,7 +142,6 @@ export default function ResetTimersSection() {
           <span className="font-mono font-bold text-blue-300 text-xs whitespace-nowrap">{timers.weekly}</span>
         </div>
 
-        {/* DAILY */}
         <div className="bg-[#0e1422] px-3 py-2 rounded-lg border border-gray-800/60 flex items-center justify-between gap-3">
           <div>
             <span className="text-gray-300 font-medium text-xs block">Reset Diário</span>
@@ -140,8 +149,15 @@ export default function ResetTimersSection() {
           </div>
           <span className="font-mono font-bold text-green-300 text-xs whitespace-nowrap">{timers.daily}</span>
         </div>
-
       </div>
+
+      {/*
+      <button
+        type="button"
+        className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>⚙️</span> 
+      </button>*/}
     </div>
   );
 }

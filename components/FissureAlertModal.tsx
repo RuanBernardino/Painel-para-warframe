@@ -27,12 +27,19 @@ export default function FissureAlertModal({
   const [tier, setTier] = useState('Lith');
   const [mission, setMission] = useState('Survival');
 
+  // Estado separado para o botão toggle da Fenda Omnia
+  const [omniaAlertActive, setOmniaAlertActive] = useState(false);
+
   // Carrega do localStorage ao iniciar
   useEffect(() => {
     try {
       const saved = localStorage.getItem('warframe_fissure_alerts');
       if (saved) {
         setFissureAlerts(JSON.parse(saved));
+      }
+      const savedOmnia = localStorage.getItem('warframe_omnia_alert');
+      if (savedOmnia) {
+        setOmniaAlertActive(JSON.parse(savedOmnia));
       }
     } catch (err) {
       console.error('Erro ao carregar alertas:', err);
@@ -45,6 +52,16 @@ export default function FissureAlertModal({
       localStorage.setItem('warframe_fissure_alerts', JSON.stringify(updated));
     } catch (err) {
       console.error('Erro ao salvar alertas:', err);
+    }
+  };
+
+  const handleToggleOmnia = () => {
+    const nextState = !omniaAlertActive;
+    setOmniaAlertActive(nextState);
+    try {
+      localStorage.setItem('warframe_omnia_alert', JSON.stringify(nextState));
+    } catch (err) {
+      console.error('Erro ao salvar estado Omnia:', err);
     }
   };
 
@@ -62,7 +79,7 @@ export default function FissureAlertModal({
     saveToStorage(fissureAlerts.filter(item => item.id !== id));
   };
 
-  const hasAlerts = fissureAlerts.length > 0;
+  const hasAlerts = fissureAlerts.length > 0 || omniaAlertActive;
 
   return (
     <>
@@ -79,7 +96,7 @@ export default function FissureAlertModal({
         <span>🔔</span>
         {hasAlerts && (
           <span className="font-bold text-[11px] bg-green-500 text-black px-1.5 py-0.5 rounded-full">
-            {fissureAlerts.length}
+            {fissureAlerts.length + (omniaAlertActive ? 1 : 0)}
           </span>
         )}
       </button>
@@ -116,6 +133,7 @@ export default function FissureAlertModal({
                   >
                     <option value="Normal">Normal</option>
                     <option value="Steel Path">Steel Path</option>
+                    <option value="Void Storms">Void Storms</option>
                   </select>
                 </div>
 
@@ -130,6 +148,7 @@ export default function FissureAlertModal({
                     <option value="Meso">Meso</option>
                     <option value="Neo">Neo</option>
                     <option value="Axi">Axi</option>
+                    <option value="Requiem">Requiem</option>
                   </select>
                 </div>
 
@@ -141,9 +160,17 @@ export default function FissureAlertModal({
                     className="w-full bg-[#131b2e] border border-gray-700 text-white p-2 rounded-lg text-xs"
                   >
                     <option value="Survival">Survival</option>
+                    <option value="Capture">Capture</option>
+                    <option value="Extermination">Extermination</option>
+                    <option value="Mobile Defense">Mobile Defense</option>
                     <option value="Defense">Defense</option>
                     <option value="Spy">Spy</option>
+                    <option value="Interception">Interception</option>
                     <option value="Rescue">Rescue</option>
+                    <option value="Disruption">Disruption</option>
+                    <option value="Alchemy">Alchemy</option>
+                    <option value="Assassination">Assassination</option>
+                    <option value="Skirmish">Skirmish</option>
                   </select>
                 </div>
               </div>
@@ -154,16 +181,50 @@ export default function FissureAlertModal({
               >
                 + Adicionar Alerta à Lista
               </button>
+
+              {/* Botão Estilo Toggle para Fissuras Omnia */}
+              <button 
+                onClick={handleToggleOmnia}
+                className={`w-full font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-2 ${
+                  omniaAlertActive 
+                    ? 'bg-green-600 hover:bg-green-500 text-white shadow-[0_0_10px_rgba(22,163,74,0.4)]' 
+                    : 'bg-gray-800 hover:bg-gray-700 text-gray-400 border border-gray-700'
+                }`}
+              >
+                <span>{omniaAlertActive ? '🔔' : '🔕'}</span>
+                {omniaAlertActive ? 'Alerta de Fissuras Omnia: ATIVADO' : 'Alerta de Fissuras Omnia: DESATIVADO'}
+              </button>
             </div>
 
             {/* Lista Cadastrada */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-gray-300 block">
-                Alertas Cadastrados ({fissureAlerts.length}):
+                Alertas Cadastrados ({fissureAlerts.length + (omniaAlertActive ? 1 : 0)}):
               </span>
 
               <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
-                {fissureAlerts.length === 0 ? (
+                {/* Item Fixo do Omnia se estiver ativo */}
+                {omniaAlertActive && (
+                  <div className="bg-[#0e1422] p-3 rounded-xl border border-green-500/40 flex justify-between items-center">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-base">🔔</span>
+                      <div>
+                        <div className="font-bold text-xs text-green-400">
+                          [Global] Fissuras Omnia (Qualquer Missão)
+                        </div>
+                        <div className="text-[10px] text-gray-400">Status: Monitorando...</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleToggleOmnia}
+                      className="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                    >
+                      Desativar
+                    </button>
+                  </div>
+                )}
+
+                {fissureAlerts.length === 0 && !omniaAlertActive ? (
                   <div className="bg-[#0e1422] p-4 rounded-xl border border-dashed border-gray-800 text-center text-gray-500 text-xs">
                     Nenhum alerta cadastrado. Adicione um acima!
                   </div>

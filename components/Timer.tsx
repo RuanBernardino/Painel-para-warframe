@@ -19,17 +19,15 @@ export default function Timer({ targetDate, onExpire }: TimerProps) {
       if (difference <= 0) {
         setTimeLeft('Transicionando');
         
-        // Quando zerar, se ainda não estiver tentando agressivamente, avisa o pai
+        // Quando zerar, avisa o pai imediatamente e tenta de segundo em segundo até atualizar
         if (!isRetrying && onExpire) {
           isRetrying = true;
-          onExpire(); // Puxa a primeira vez imediatamente
+          onExpire();
           
-          // Faz novas tentativas a cada 1 segundo até a API atualizar o valor do targetDate
           const retryInterval = setInterval(() => {
             onExpire();
           }, 1000);
 
-          // Limpa o loop de tentativas assim que o componente receber um targetDate novo do pai
           return () => clearInterval(retryInterval);
         }
         return;

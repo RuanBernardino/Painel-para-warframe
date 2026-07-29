@@ -1,6 +1,14 @@
 import Timer from './Timer';
 
 export default function FissureCard({ fissure, category }: { fissure: any, category?: string }) {
+  // Proteção caso o objeto fissure venha undefined/null
+  if (!fissure) {
+    return null;
+  }
+
+  // Calcula se o tempo da fissura já acabou
+  const isExpired = fissure.expiry ? new Date(fissure.expiry).getTime() <= Date.now() : false;
+
   return (
     <div className="bg-[#0e1422] border border-gray-800/60 p-3 rounded-lg flex justify-between items-center text-xs">
       <div>
@@ -18,7 +26,11 @@ export default function FissureCard({ fissure, category }: { fissure: any, categ
           </span>
         )}
         <div className="font-mono text-yellow-500 text-sm">
-          <Timer targetDate={fissure.expiry} />
+          {isExpired ? (
+            <span className="text-yellow-500 font-semibold">Fechou</span>
+          ) : (
+            <Timer targetDate={fissure.expiry} />
+          )}
         </div>
       </div>
     </div>
