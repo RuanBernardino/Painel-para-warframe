@@ -172,7 +172,11 @@ export default function ResetTimersSection() {
           type="button"
           className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
         >
-          <span>⚙️</span> 
+          <img 
+            src="/Config.svg" 
+            alt="Narmer" 
+            className="w-4 h-4 object-contain" 
+          />
         </button>
 
         {isArchonPopupOpen && (

@@ -79,6 +79,18 @@ export default function FissureAlertModal({
     saveToStorage(fissureAlerts.filter(item => item.id !== id));
   };
 
+  // Função auxiliar para retornar a imagem correta com base na Era (Tier)
+  const getRelicImage = (tierName: string) => {
+    switch (tierName?.toLowerCase()) {
+      case 'axi': return '/RelicAxi.png';
+      case 'lith': return '/RelicLith.png';
+      case 'meso': return '/RelicMeso.png';
+      case 'neo': return '/RelicNeo.png';
+      case 'requiem': return '/RelicRequiem.png';
+      default: return '/RelicLith.png';
+    }
+  };
+
   const hasAlerts = fissureAlerts.length > 0 || omniaAlertActive;
 
   return (
@@ -232,7 +244,12 @@ export default function FissureAlertModal({
                   fissureAlerts.map(item => (
                     <div key={item.id} className="bg-[#0e1422] p-3 rounded-xl border border-gray-800/60 flex justify-between items-center">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-base">🔔</span>
+                        {/* Imagem dinâmica da relíquia correspondente */}
+                        <img 
+                          src={getRelicImage(item.tier)} 
+                          alt={item.tier} 
+                          className="w-6 h-6 object-contain"
+                        />
                         <div>
                           <div className="font-bold text-xs text-white">
                             [{item.category}] {item.tier} - {item.mission}

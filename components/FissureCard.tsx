@@ -9,14 +9,34 @@ export default function FissureCard({ fissure, category }: { fissure: any, categ
   // Calcula se o tempo da fissura já acabou
   const isExpired = fissure.expiry ? new Date(fissure.expiry).getTime() <= Date.now() : false;
 
+  // Função auxiliar para retornar a imagem correta com base na Era (Tier)
+  const getRelicImage = (tierName: string) => {
+    switch (tierName?.toLowerCase()) {
+      case 'axi': return '/RelicAxi.png';
+      case 'lith': return '/RelicLith.png';
+      case 'meso': return '/RelicMeso.png';
+      case 'neo': return '/RelicNeo.png';
+      case 'requiem': return '/RelicRequiem.png';
+      default: return '/RelicLith.png';
+    }
+  };
+
   return (
     <div className="bg-[#0e1422] border border-gray-800/60 p-3 rounded-lg flex justify-between items-center text-xs">
-      <div>
-        <p className="font-bold text-gray-200">{fissure.node}</p>
-        <p className="text-blue-400 font-medium">
-          {fissure.missionType} <span className="text-gray-400">({fissure.tier})</span>
-        </p>
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{fissure.enemy}</p>
+      <div className="flex items-center gap-2.5">
+        {/* Imagem da relíquia correspondente ao tier */}
+        <img 
+          src={getRelicImage(fissure.tier)} 
+          alt={fissure.tier} 
+          className="w-7 h-7 object-contain"
+        />
+        <div>
+          <p className="font-bold text-gray-200">{fissure.node}</p>
+          <p className="text-blue-400 font-medium">
+            {fissure.missionType} <span className="text-gray-400">({fissure.tier})</span>
+          </p>
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider">{fissure.enemy}</p>
+        </div>
       </div>
       
       <div className="text-right flex flex-col items-end gap-1">
