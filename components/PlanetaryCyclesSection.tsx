@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Timer from './Timer';
+import { cetusInfo, vallisInfo, cambionInfo } from '@/lib/data/planetaryInfo';
 
 interface CycleData {
   expiry?: string;
@@ -21,7 +22,6 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
 
   // --- PERSISTÊNCIA DOS ALERTAS VIA LOCALSTORAGE ---
 
-  // Earth Alert State
   const [earthAlert, setEarthAlert] = useState<{ active: boolean; targets: string[] }>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('warframe_earth_alert');
@@ -38,7 +38,6 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     }
   }, [earthAlert]);
 
-  // Cetus Alert State
   const [cetusAlert, setCetusAlert] = useState<{ active: boolean; targets: string[] }>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('warframe_cetus_alert');
@@ -55,7 +54,6 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     }
   }, [cetusAlert]);
 
-  // Vallis Alert State
   const [vallisAlert, setVallisAlert] = useState<{ active: boolean; targets: string[] }>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('warframe_vallis_alert');
@@ -72,7 +70,6 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     }
   }, [vallisAlert]);
 
-  // Cambion Alert State
   const [cambionAlert, setCambionAlert] = useState<{ active: boolean; targets: string[] }>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('warframe_cambion_alert');
@@ -89,11 +86,40 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     }
   }, [cambionAlert]);
 
-  // Estados de visibilidade dos modais de configuração
+  // Estados de visibilidade dos modais de configuração e guias informativos
   const [showEarthSettings, setShowEarthSettings] = useState(false);
   const [showCetusSettings, setShowCetusSettings] = useState(false);
   const [showVallisSettings, setShowVallisSettings] = useState(false);
   const [showCambionSettings, setShowCambionSettings] = useState(false);
+
+  const [showCetusInfoModal, setShowCetusInfoModal] = useState(false);
+  const [showVallisInfoModal, setShowVallisInfoModal] = useState(false);
+  const [showCambionInfoModal, setShowCambionInfoModal] = useState(false);
+
+  // Referências para detecção de cliques fora dos containers
+  const cetusContainerRef = useRef<HTMLDivElement>(null);
+  const vallisContainerRef = useRef<HTMLDivElement>(null);
+  const cambionContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fecha os pop-ups ao clicar fora deles
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cetusContainerRef.current && !cetusContainerRef.current.contains(event.target as Node)) {
+        setShowCetusSettings(false);
+        setShowCetusInfoModal(false);
+      }
+      if (vallisContainerRef.current && !vallisContainerRef.current.contains(event.target as Node)) {
+        setShowVallisSettings(false);
+        setShowVallisInfoModal(false);
+      }
+      if (cambionContainerRef.current && !cambionContainerRef.current.contains(event.target as Node)) {
+        setShowCambionSettings(false);
+        setShowCambionInfoModal(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const prevStatesRef = useRef({
     earth: null as string | null,
@@ -184,6 +210,10 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     }
   };
 
+  const currentCetusData = (cetus?.isDay ?? true) ? cetusInfo.day : cetusInfo.night;
+  const currentVallisData = (vallis?.isWarm ?? false) ? vallisInfo.warm : vallisInfo.cold;
+  const currentCambionData = (cambion?.state?.toLowerCase() === 'fass') ? cambionInfo.fass : cambionInfo.vome;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       
@@ -241,10 +271,19 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
       </div>
 
       {/* CETUS */}
-      <div className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 relative">
+      <div ref={cetusContainerRef} className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center border border-blue-500/30">🌕</div>
+            <div 
+              onClick={() => {
+                setShowCetusInfoModal(!showCetusInfoModal);
+                setShowCetusSettings(false);
+              }}
+              className="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center border border-blue-500/30 cursor-pointer hover:bg-blue-800/60 transition shadow-inner"
+              title="Ver guia de recursos"
+            >
+              {cetus?.isDay ? '☀️' : '🌕'}
+            </div>
             <div>
               <div className="text-xs text-gray-400 font-bold tracking-wider">
                 CETUS <span className={cetus?.isDay ? "text-yellow-400" : "text-purple-400"}>{cetus ? (cetus.isDay ? 'DAY' : 'NIGHT') : '...'}</span>
@@ -255,7 +294,10 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
             </div>
           </div>
           <button 
-            onClick={() => setShowCetusSettings(!showCetusSettings)}
+            onClick={() => {
+              setShowCetusSettings(!showCetusSettings);
+              setShowCetusInfoModal(false);
+            }}
             className={`p-2 rounded-lg transition ${cetusAlert.active ? 'text-yellow-400 bg-yellow-500/15' : 'text-gray-400 hover:bg-gray-800'}`}
             title="Configurar Alarme"
           >
@@ -291,13 +333,77 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
             </button>
           </div>
         )}
+
+        {/* Modal de Informações do Cetus */}
+        {showCetusInfoModal && (
+          <div className="absolute left-0 right-0 top-20 z-50 mx-2 bg-[#0e1422] border border-gray-700 p-4 rounded-xl shadow-2xl flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+              <div>
+                <div className="text-xs text-white font-bold tracking-wider uppercase">{currentCetusData.title}</div>
+                <div className="text-[10px] text-gray-400">Guia rápido de recursos e spawns ativos</div>
+              </div>
+              <button onClick={() => setShowCetusInfoModal(false)} className="text-gray-400 hover:text-white text-xs font-bold p-1 rounded-lg bg-gray-800 transition">✕</button>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-gray-300 max-h-60 overflow-y-auto pr-1">
+              <div>
+                <strong className="text-yellow-400 block mb-1">🐟 Peixes Disponíveis:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentCetusData.peixes.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-blue-950/60 border border-blue-900/60 text-blue-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <strong className="text-green-400 block mb-1">🌿 Recursos / Plantas:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentCetusData.recursos.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-900/60 text-emerald-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <strong className="text-purple-400 block mb-1">⚠️ Inimigos / Criaturas:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentCetusData.inimigos.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-purple-950/60 border border-purple-900/60 text-purple-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setShowCetusInfoModal(false)} className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition mt-1">
+              Fechar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* VALLIS */}
-      <div className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 relative">
+      <div ref={vallisContainerRef} className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center border border-blue-500/30">❄️</div>
+            <div 
+              onClick={() => {
+                setShowVallisInfoModal(!showVallisInfoModal);
+                setShowVallisSettings(false);
+              }}
+              className="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center border border-blue-500/30 cursor-pointer hover:bg-blue-800/60 transition shadow-inner"
+              title="Ver guia de recursos"
+            >
+              {vallis?.isWarm ? '🔥' : '❄️'}
+            </div>
             <div>
               <div className="text-xs text-gray-400 font-bold tracking-wider">
                 VALLIS <span className={vallis?.isWarm ? "text-orange-400" : "text-blue-300"}>{vallis ? (vallis.isWarm ? 'WARM' : 'COLD') : '...'}</span>
@@ -308,7 +414,10 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
             </div>
           </div>
           <button 
-            onClick={() => setShowVallisSettings(!showVallisSettings)}
+            onClick={() => {
+              setShowVallisSettings(!showVallisSettings);
+              setShowVallisInfoModal(false);
+            }}
             className={`p-2 rounded-lg transition ${vallisAlert.active ? 'text-yellow-400 bg-yellow-500/15' : 'text-gray-400 hover:bg-gray-800'}`}
             title="Configurar Alarme"
           >
@@ -344,13 +453,77 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
             </button>
           </div>
         )}
+
+        {/* Modal de Informações do Vallis */}
+        {showVallisInfoModal && (
+          <div className="absolute left-0 right-0 top-20 z-50 mx-2 bg-[#0e1422] border border-gray-700 p-4 rounded-xl shadow-2xl flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+              <div>
+                <div className="text-xs text-white font-bold tracking-wider uppercase">{currentVallisData.title}</div>
+                <div className="text-[10px] text-gray-400">Guia rápido de recursos e spawns ativos</div>
+              </div>
+              <button onClick={() => setShowVallisInfoModal(false)} className="text-gray-400 hover:text-white text-xs font-bold p-1 rounded-lg bg-gray-800 transition">✕</button>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-gray-300 max-h-60 overflow-y-auto pr-1">
+              <div>
+                <strong className="text-yellow-400 block mb-1">🐟 Peixes Disponíveis:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentVallisData.peixes.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-blue-950/60 border border-blue-900/60 text-blue-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <strong className="text-green-400 block mb-1">🌿 Recursos / Termais:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentVallisData.recursos.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-900/60 text-emerald-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <strong className="text-purple-400 block mb-1">⚠️ Inimigos / Criaturas:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentVallisData.inimigos.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-purple-950/60 border border-purple-900/60 text-purple-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setShowVallisInfoModal(false)} className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition mt-1">
+              Fechar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* CAMBION */}
-      <div className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 relative">
+      <div ref={cambionContainerRef} className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center border border-blue-500/30">🔥</div>
+            <div 
+              onClick={() => {
+                setShowCambionInfoModal(!showCambionInfoModal);
+                setShowCambionSettings(false);
+              }}
+              className="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center border border-blue-500/30 cursor-pointer hover:bg-blue-800/60 transition shadow-inner"
+              title="Ver guia de recursos"
+            >
+              🔥
+            </div>
             <div>
               <div className="text-xs text-gray-400 font-bold tracking-wider">
                 CAMBION <span className="text-orange-400">{cambion ? cambion.state?.toUpperCase() : '...'}</span>
@@ -361,7 +534,10 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
             </div>
           </div>
           <button 
-            onClick={() => setShowCambionSettings(!showCambionSettings)}
+            onClick={() => {
+              setShowCambionSettings(!showCambionSettings);
+              setShowCambionInfoModal(false);
+            }}
             className={`p-2 rounded-lg transition ${cambionAlert.active ? 'text-yellow-400 bg-yellow-500/15' : 'text-gray-400 hover:bg-gray-800'}`}
             title="Configurar Alarme"
           >
@@ -394,6 +570,61 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
               }`}
             >
               {cambionAlert.active ? 'Desativar Alarme' : 'Ativar Alarme'}
+            </button>
+          </div>
+        )}
+
+        {/* Modal de Informações do Cambion */}
+        {showCambionInfoModal && (
+          <div className="absolute left-0 right-0 top-20 z-50 mx-2 bg-[#0e1422] border border-gray-700 p-4 rounded-xl shadow-2xl flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+              <div>
+                <div className="text-xs text-white font-bold tracking-wider uppercase">{currentCambionData.title}</div>
+                <div className="text-[10px] text-gray-400">Guia rápido de recursos e spawns ativos</div>
+              </div>
+              <button onClick={() => setShowCambionInfoModal(false)} className="text-gray-400 hover:text-white text-xs font-bold p-1 rounded-lg bg-gray-800 transition">✕</button>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-gray-300 max-h-60 overflow-y-auto pr-1">
+              <div>
+                <strong className="text-yellow-400 block mb-1">🐟 Peixes / Preservação:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentCambionData.peixes.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-blue-950/60 border border-blue-900/60 text-blue-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <strong className="text-green-400 block mb-1">🌿 Recursos / Resíduos:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentCambionData.recursos.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-900/60 text-emerald-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <strong className="text-purple-400 block mb-1">⚠️ Inimigos / Criaturas:</strong>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentCambionData.inimigos.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-purple-950/60 border border-purple-900/60 text-purple-200 px-2 py-1 rounded text-[11px]">
+                      {item.img && <img src={item.img} alt={item.nome} className="w-4 h-4 object-contain" />}
+                      {item.nome}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setShowCambionInfoModal(false)} className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition mt-1">
+              Fechar
             </button>
           </div>
         )}

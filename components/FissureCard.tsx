@@ -17,7 +17,7 @@ export default function FissureCard({ fissure, category }: { fissure: any, categ
       case 'meso': return '/RelicMeso.png';
       case 'neo': return '/RelicNeo.png';
       case 'requiem': return '/RelicRequiem.png';
-      default: return '/RelicLith.png';
+      default: return '/Omnia.png';
     }
   };
 

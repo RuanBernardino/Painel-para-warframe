@@ -270,7 +270,7 @@ export default function ArbitrationSection() {
                       {nextArbitration.node}
                     </span>
                   </div>
-                  <span className="text-[11px] text-blue-400 font-mono">
+                  <span className="font-bold text-blue-300 text-sm">
                     {translateDateString(nextArbitration.date)} às {nextArbitration.time}
                   </span>
                 </div>
