@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import ArchonHuntSection from '@/components/ArchonHuntSection';
-
+import SettingsSection from '@/components/Settings'; 
 export default function ResetTimersSection() {
   const [timers, setTimers] = useState({
     weekly: '--',
@@ -11,7 +11,11 @@ export default function ResetTimersSection() {
   });
 
   const [isArchonPopupOpen, setIsArchonPopupOpen] = useState(false);
-  const popupRef = useRef<HTMLDivElement>(null);
+  const [isSettingsPopupOpen, setIsSettingsPopupOpen] = useState(false);
+  
+  const archonPopupRef = useRef<HTMLDivElement>(null);
+  const settingsPopupRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let rawData: any = null;
@@ -79,8 +83,9 @@ export default function ResetTimersSection() {
     const tickInterval = setInterval(updateCalculations, 1000);
 
     function handleClickOutside(event: MouseEvent) {
-      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsArchonPopupOpen(false);
+        setIsSettingsPopupOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -110,7 +115,7 @@ export default function ResetTimersSection() {
   }
 
   return (
-    <div className="bg-[#131b2e] px-4 py-3 rounded-xl border border-gray-800 text-white w-full flex flex-col md:flex-row items-center justify-between gap-4 relative">
+    <div className="bg-[#131b2e] px-4 py-3 rounded-xl border border-gray-800 text-white w-full flex flex-col md:flex-row items-center justify-between gap-4 relative" ref={containerRef}>
       <div className="flex items-center gap-3 whitespace-nowrap">
         <img 
           src="/favicon.ico" 
@@ -154,64 +159,99 @@ export default function ResetTimersSection() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 relative" ref={popupRef}>
-        <button
-          type="button"
-          onClick={() => setIsArchonPopupOpen(!isArchonPopupOpen)}
-          className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-          title="Caçada Archon"
-        >
-          <img 
-            src="/IconNarmer.webp" 
-            alt="Narmer" 
-            className="w-5 h-5 object-contain" 
-          />
-        </button>
-          
-        <button
-          type="button"
-          className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-        >
-          <img 
-            src="/Config.svg" 
-            alt="Narmer" 
-            className="w-4 h-4 object-contain" 
-          />
-        </button>
+      <div className="flex items-center gap-2 relative">
+        {/* Botão Caçada Archon */}
+        <div className="relative" ref={archonPopupRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsArchonPopupOpen(!isArchonPopupOpen);
+              setIsSettingsPopupOpen(false);
+            }}
+            className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            title="Caçada Archon"
+          >
+            <img 
+              src="/IconNarmer.webp" 
+              alt="Narmer" 
+              className="w-5 h-5 object-contain" 
+            />
+          </button>
 
-        {isArchonPopupOpen && (
-          <div className="absolute right-0 top-12 z-50 w-[380px] sm:w-[420px] bg-[#0e1422] border border-gray-800 rounded-xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center pb-3 mb-3 border-b border-gray-800">
-              
-              {/* Lado esquerdo: Título */}
-              <span className="text-xs font-mono text-rose-400 font-bold uppercase tracking-wider flex items-center gap-2">
-                <img 
-                 src="/IconNarmer.webp" 
-                 alt="Narmer" 
-                 className="w-5 h-5 object-contain" 
-                /> Caçada Archon
-              </span>
-              
-              {/* Lado direito: Timer ao lado do botão X */}
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs font-bold text-rose-400">
-                  {timers.weekly}
+          {isArchonPopupOpen && (
+            <div className="absolute right-0 top-12 z-50 w-[380px] sm:w-[420px] bg-[#0e1422] border border-gray-800 rounded-xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex justify-between items-center pb-3 mb-3 border-b border-gray-800">
+                <span className="text-xs font-mono text-rose-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                  <img 
+                   src="/IconNarmer.webp" 
+                   alt="Narmer" 
+                   className="w-5 h-5 object-contain" 
+                  /> Caçada Archon
                 </span>
+                
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-xs font-bold text-rose-400">
+                    {timers.weekly}
+                  </span>
 
-                <button 
-                  onClick={() => setIsArchonPopupOpen(false)}
-                  className="text-gray-400 hover:text-white font-mono text-xs bg-gray-800/60 hover:bg-gray-700 px-2 py-0.5 rounded transition cursor-pointer"
+                  <button 
+                    onClick={() => setIsArchonPopupOpen(false)}
+                    className="text-gray-400 hover:text-white font-mono text-xs bg-gray-800/60 hover:bg-gray-700 px-2 py-0.5 rounded transition cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-[400px] overflow-y-auto">
+                <ArchonHuntSection />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Botão de Configuração */}
+        <div className="relative" ref={settingsPopupRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsSettingsPopupOpen(!isSettingsPopupOpen);
+              setIsArchonPopupOpen(false);
+            }}
+            className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-2 rounded-lg text-gray-300 transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            title="Configurações"
+          >
+            <img 
+              src="/Config.svg" 
+              alt="Configurações" 
+              className="w-4 h-4 object-contain" 
+            />
+          </button>
+
+          {isSettingsPopupOpen && (
+            <div className="absolute right-0 top-12 z-50 w-96 bg-[#0e1422] border border-gray-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-white animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800/80 bg-[#131b2e]/50">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-blue-400">⚙️</span>
+                  <h3 className="font-bold tracking-wider text-sm uppercase text-gray-100">
+                    Configurações
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsSettingsPopupOpen(false)}
+                  className="text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-700 p-1.5 rounded-lg transition text-xs font-bold cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
-            </div>
 
-            <div className="max-h-[400px] overflow-y-auto">
-              <ArchonHuntSection />
+              {/* 2. Exibindo o componente externo de configurações dentro do pop-up */}
+              <div className="max-h-[70vh] overflow-y-auto">
+                <SettingsSection />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

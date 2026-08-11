@@ -25,7 +25,7 @@ export default function WarframeDashboard() {
     }
 
     fetchFissures();
-    const interval = setInterval(fetchFissures, 2000);
+    const interval = setInterval(fetchFissures, 20000);
     return () => clearInterval(interval);
   }, []);
 

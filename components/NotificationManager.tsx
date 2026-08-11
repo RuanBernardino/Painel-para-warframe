@@ -28,7 +28,7 @@ export default function NotificationManager() {
 
       // Tocar som centralizado
       try {
-        const audio = new Audio('/AlarmA.wav');
+        const audio = new Audio('/AlarmA.mp3');
         audio.volume = 0.25;
         audio.play().catch(err => console.log('Áudio bloqueado pelo navegador:', err));
       } catch (err) {
