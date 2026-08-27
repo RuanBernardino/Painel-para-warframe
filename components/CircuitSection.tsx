@@ -48,11 +48,11 @@ export default function CircuitSection() {
   useEffect(() => {
     async function fetchCircuit() {
       try {
-        const res = await fetch('https://api.warframestat.us/pc');
+        const res = await fetch('/api/warframe/duviriCycle', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Fontes do Circuito indisponíveis');
         const data = await res.json();
-        // Utiliza o bloco correto duviriCycle
-        if (data && data.duviriCycle) {
-          setCircuitData(data.duviriCycle);
+        if (data && Array.isArray(data.choices)) {
+          setCircuitData(data);
         }
       } catch (err) {
         console.error('Erro ao buscar dados do Circuit:', err);

@@ -37,7 +37,33 @@ const TIER_BY_MODIFIER: Record<string, { tier: string; tierNum: number }> = {
   VoidT6: { tier: 'Omnia', tierNum: 6 },
 };
 
-const CYCLE_ENDPOINTS = new Set(['earthCycle', 'cetusCycle', 'vallisCycle', 'cambionCycle']);
+const CYCLE_ENDPOINTS = new Set(['earthCycle', 'cetusCycle', 'vallisCycle', 'cambionCycle', 'duviriCycle']);
+
+const CIRCUIT_WARFRAME_ROTATIONS = [
+  ['Excalibur', 'Trinity', 'Ember'],
+  ['Loki', 'Mag', 'Rhino'],
+  ['Ash', 'Frost', 'Nyx'],
+  ['Saryn', 'Vauban', 'Nova'],
+  ['Nekros', 'Valkyr', 'Oberon'],
+  ['Hydroid', 'Mirage', 'Limbo'],
+  ['Mesa', 'Chroma', 'Atlas'],
+  ['Ivara', 'Inaros', 'Titania'],
+  ['Nidus', 'Octavia', 'Harrow'],
+  ['Gara', 'Khora', 'Revenant'],
+  ['Garuda', 'Baruuk', 'Hildryn'],
+];
+
+const CIRCUIT_INCARNON_ROTATIONS = [
+  ['Braton', 'Lato', 'Skana', 'Paris', 'Kunai'],
+  ['Boar', 'Gammacor', 'Angstrum', 'Gorgon', 'Anku'],
+  ['Bo', 'Latron', 'Furis', 'Furax', 'Strun'],
+  ['Lex', 'Magistar', 'Boltor', 'Bronco', 'Ceramic Dagger'],
+  ['Torid', 'Dual Toxocyst', 'Dual Ichor', 'Miter', 'Atomos'],
+  ['Ack & Brunt', 'Soma', 'Vasto', 'Nami Solo', 'Burston'],
+  ['Zylok', 'Sibear', 'Dread', 'Despair', 'Hate'],
+  ['Dera', 'Sybaris', 'Cestra', 'Sicarus', 'Okina'],
+  ['Vectis', 'Stug', 'Ballistica', 'Destreza', 'Obex'],
+];
 
 const ARCHON_BOSSES: Record<string, string> = {
   SORTIE_BOSS_AMAR: 'Archon Amar',
@@ -182,6 +208,28 @@ function getCalculatedCycle(endpoint: string): CycleData | null {
     };
   }
 
+  if (endpoint === 'duviriCycle') {
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    // Em 24/08/2026 as duas listas estavam na rotação 9, confirmada pelo jogo e pela Wiki.
+    const anchor = Date.parse('2026-08-24T00:00:00Z');
+    const elapsedWeeks = Math.floor((now - anchor) / weekMs);
+    const activation = anchor + elapsedWeeks * weekMs;
+    const positiveModulo = (value: number, length: number) => ((value % length) + length) % length;
+    const warframeIndex = positiveModulo(8 + elapsedWeeks, CIRCUIT_WARFRAME_ROTATIONS.length);
+    const incarnonIndex = positiveModulo(8 + elapsedWeeks, CIRCUIT_INCARNON_ROTATIONS.length);
+
+    return {
+      id: `duviriCycle${activation}`,
+      activation: new Date(activation).toISOString(),
+      expiry: new Date(activation + weekMs).toISOString(),
+      choices: [
+        { category: 'normal', choices: CIRCUIT_WARFRAME_ROTATIONS[warframeIndex] },
+        { category: 'hard', choices: CIRCUIT_INCARNON_ROTATIONS[incarnonIndex] },
+      ],
+      source: 'internal-rotation',
+    };
+  }
+
   return null;
 }
 
@@ -241,6 +289,8 @@ function advanceStaleCycle(endpoint: string, input: CycleData): CycleData | null
       result.isWarm = !result.isWarm;
       result.state = result.isWarm ? 'warm' : 'cold';
       expiry += result.isWarm ? 400_000 : 1_200_000;
+    } else if (endpoint === 'duviriCycle') {
+      return getCalculatedCycle(endpoint);
     }
   }
 
