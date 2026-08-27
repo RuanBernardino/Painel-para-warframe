@@ -24,6 +24,7 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
   const [earth, setEarth] = useState<CycleData | null>(null);
   const [vallis, setVallis] = useState<CycleData | null>(null);
   const [cambion, setCambion] = useState<CycleData | null>(null);
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
 
   // --- PERSISTÊNCIA DOS ALERTAS VIA LOCALSTORAGE ---
 
@@ -137,6 +138,7 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
 
   const lastFetchTimeRef = useRef<number>(0);
   const isPollingRef = useRef<boolean>(false);
+  const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Função principal de busca com validação de ciclo novo
   const fetchCycles = useCallback(async (isExpirationCheck = false) => {
@@ -144,15 +146,17 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     
     // Se não for verificação de expiração, respeita o limite de segurança de 10s para cliques manuais
     if (!isExpirationCheck && now - lastFetchTimeRef.current < 10000) return;
-    if (isPollingRef.current && isExpirationCheck) return; // Evita sobrepor polls
-
     lastFetchTimeRef.current = now;
 
     const safeFetch = async (url: string) => {
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) return null;
-        return await res.json();
+        const serverTime = Number(res.headers.get('X-Server-Time'));
+        return {
+          data: await res.json() as CycleData,
+          serverTime: Number.isFinite(serverTime) ? serverTime : null,
+        };
       } catch (err) {
         console.error(`Erro ao buscar ${url}:`, err);
         return null;
@@ -160,40 +164,53 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
     };
 
     const [cetusData, earthData, vallisData, cambionData] = await Promise.all([
-      safeFetch('https://api.warframestat.us/pc/cetusCycle'),
-      safeFetch('https://api.warframestat.us/pc/earthCycle'),
-      safeFetch('https://api.warframestat.us/pc/vallisCycle'),
-      safeFetch('https://api.warframestat.us/pc/cambionCycle'),
+      safeFetch('/api/warframe/cetusCycle'),
+      safeFetch('/api/warframe/earthCycle'),
+      safeFetch('/api/warframe/vallisCycle'),
+      safeFetch('/api/warframe/cambionCycle'),
     ]);
 
-    if (cetusData) setCetus(cetusData);
-    if (earthData) setEarth(earthData);
-    if (vallisData) setVallis(vallisData);
-    if (cambionData) setCambion(cambionData);
-  }, []);
+    const responses = [cetusData, earthData, vallisData, cambionData];
+    const serverTime = responses.find((item) => item?.serverTime != null)?.serverTime;
+    const nextOffset = serverTime ? serverTime - Date.now() : clockOffsetMs;
+    if (serverTime) setClockOffsetMs(nextOffset);
+
+    if (cetusData) setCetus(cetusData.data);
+    if (earthData) setEarth(earthData.data);
+    if (vallisData) setVallis(vallisData.data);
+    if (cambionData) setCambion(cambionData.data);
+
+    const syncedNow = Date.now() + nextOffset;
+    return responses.every((item) => {
+      const expiry = Date.parse(item?.data.expiry ?? '');
+      return Number.isFinite(expiry) && expiry > syncedNow;
+    });
+  }, [clockOffsetMs]);
 
   // Função disparada quando qualquer timer zera
-  const handleTimerExpire = useCallback(() => {
+  const handleTimerExpire = useCallback(async () => {
     if (isPollingRef.current) return;
     isPollingRef.current = true;
 
-    // Tenta a cada 3 segundos até a API responder com um novo expiry no futuro
-    const interval = setInterval(async () => {
-      const res = await fetch('https://api.warframestat.us/pc/earthCycle');
-      if (res.ok) {
-        const data = await res.json();
-        // Se a data de expiração agora for maior que agora, significa que o ciclo virou!
-        if (data.expiry && new Date(data.expiry).getTime() > Date.now()) {
-          clearInterval(interval);
-          isPollingRef.current = false;
-          fetchCycles(true); // Atualiza todos os ciclos de uma vez
-        }
+    const poll = async () => {
+      const updated = await fetchCycles(true);
+      if (updated) {
+        isPollingRef.current = false;
+        return;
       }
-    }, 3000);
+      pollingTimeoutRef.current = setTimeout(poll, 3000);
+    };
+
+    await poll();
   }, [fetchCycles]);
 
   useEffect(() => {
     fetchCycles(false);
+    const refreshInterval = setInterval(() => fetchCycles(true), 60000);
+    return () => {
+      clearInterval(refreshInterval);
+      if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
+    };
   }, [fetchCycles]);
 
   // Alertas de mudança de estado
@@ -270,7 +287,7 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
                 EARTH <span className={earth?.isDay ? "text-green-400" : "text-blue-400"}>{earth ? (earth.isDay ? 'DAY' : 'NIGHT') : '...'}</span>
               </div>
               <div className="text-lg font-mono font-semibold">
-                {earth?.expiry ? <Timer targetDate={earth.expiry} onExpire={handleTimerExpire} /> : 'Carregando...'}
+                {earth?.expiry ? <Timer targetDate={earth.expiry} onExpire={handleTimerExpire} clockOffsetMs={clockOffsetMs} /> : 'Carregando...'}
               </div>
             </div>
           </div>
@@ -332,7 +349,7 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
                 CETUS <span className={cetus?.isDay ? "text-yellow-400" : "text-purple-400"}>{cetus ? (cetus.isDay ? 'DAY' : 'NIGHT') : '...'}</span>
               </div>
               <div className="text-lg font-mono font-semibold">
-                {cetus?.expiry ? <Timer targetDate={cetus.expiry} onExpire={handleTimerExpire} /> : 'Carregando...'}
+                {cetus?.expiry ? <Timer targetDate={cetus.expiry} onExpire={handleTimerExpire} clockOffsetMs={clockOffsetMs} /> : 'Carregando...'}
               </div>
             </div>
           </div>
@@ -451,7 +468,7 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
                 VALLIS <span className={vallis?.isWarm ? "text-orange-400" : "text-blue-300"}>{vallis ? (vallis.isWarm ? 'WARM' : 'COLD') : '...'}</span>
               </div>
               <div className="text-lg font-mono font-semibold">
-                {vallis?.expiry ? <Timer targetDate={vallis.expiry} onExpire={handleTimerExpire} /> : 'Carregando...'}
+                {vallis?.expiry ? <Timer targetDate={vallis.expiry} onExpire={handleTimerExpire} clockOffsetMs={clockOffsetMs} /> : 'Carregando...'}
               </div>
             </div>
           </div>
@@ -570,7 +587,7 @@ export default function PlanetaryCyclesSection({ onTriggerAlert }: PlanetaryCycl
                 CAMBION <span className="text-orange-400">{cambion ? cambion.state?.toUpperCase() : '...'}</span>
               </div>
               <div className="text-lg font-mono font-semibold">
-                {cambion?.expiry ? <Timer targetDate={cambion.expiry} onExpire={handleTimerExpire} /> : 'Carregando...'}
+                {cambion?.expiry ? <Timer targetDate={cambion.expiry} onExpire={handleTimerExpire} clockOffsetMs={clockOffsetMs} /> : 'Carregando...'}
               </div>
             </div>
           </div>

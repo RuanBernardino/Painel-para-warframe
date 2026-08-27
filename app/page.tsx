@@ -1,24 +1,37 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CircuitSection from '@/components/CircuitSection';
 import VoidFissuresSection from '@/components/VoidFissuresSection';
 import PlanetaryCyclesSection from '@/components/PlanetaryCyclesSection';
 import ResetTimersSection from '@/components/ResetTimersSection';
-import NotificationManager from '@/components/NotificationManager';
+import NotificationManager, { triggerGlobalNotification } from '@/components/NotificationManager';
 import DashboardTabs from '@/components/DashboardTabs';
 import ArbitrationSection from '@/components/ArbitrationSection';
 
 export default function WarframeDashboard() {
   const [fissuresData, setFissuresData] = useState<any[]>([]);
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
   const [activeTab, setActiveTab] = useState<'principal' | 'outra'>('principal');
+  const handleCycleAlert = useCallback((message: string) => {
+    triggerGlobalNotification('cycle', '🌍 Mudança de ciclo!', message);
+  }, []);
 
   useEffect(() => {
     async function fetchFissures() {
       try {
-        const res = await fetch('https://api.warframestat.us/pc/fissures');
+        const res = await fetch('/api/warframe/fissures', { cache: 'no-store' });
         if (!res.ok) return;
+        const serverTime = Number(res.headers.get('X-Server-Time'));
+        const nextClockOffset = Number.isFinite(serverTime) ? serverTime - Date.now() : 0;
         const data = await res.json();
-        setFissuresData(data);
+        if (!Array.isArray(data)) return;
+
+        setClockOffsetMs(nextClockOffset);
+        const gracePeriod = Date.now() + nextClockOffset - 3000;
+        setFissuresData(data.filter((fissure) => {
+          const expiry = Date.parse(fissure?.expiry);
+          return Number.isFinite(expiry) && expiry > gracePeriod;
+        }));
       } catch (err) {
         console.error('Erro ao buscar fissuras:', err);
       }
@@ -39,7 +52,7 @@ export default function WarframeDashboard() {
       <ResetTimersSection />
 
       {/* Ciclos Planetários */}
-      <PlanetaryCyclesSection />
+      <PlanetaryCyclesSection onTriggerAlert={handleCycleAlert} />
       {/* BOTÕES */}
       {/*<div className="flex items-center justify-center gap-3">
         <button
@@ -69,7 +82,7 @@ export default function WarframeDashboard() {
       <div>
         {/* ABA PRINCIPAL */}
         <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 items-start ${activeTab === 'principal' ? 'block' : 'hidden'}`}>
-          <VoidFissuresSection fissuresData={fissuresData} />
+          <VoidFissuresSection fissuresData={fissuresData} clockOffsetMs={clockOffsetMs} />
           
           <div className="flex flex-col gap-4">
             <ArbitrationSection />

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { getNotificationPermission, requestNotificationPermission } from './NotificationManager';
 
 export default function SettingsSection() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -17,6 +18,11 @@ export default function SettingsSection() {
     }
     return 80;
   });
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>('default');
+
+  useEffect(() => {
+    setNotificationPermission(getNotificationPermission());
+  }, []);
 
   // Usamos um Ref para manter a instância do áudio viva
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -53,6 +59,18 @@ export default function SettingsSection() {
     }
   };
 
+  const enableSystemNotifications = async () => {
+    setNotificationPermission(await requestNotificationPermission());
+  };
+
+  const permissionLabel = notificationPermission === 'granted'
+    ? 'PERMITIDO'
+    : notificationPermission === 'denied'
+      ? 'BLOQUEADO'
+      : notificationPermission === 'unsupported'
+        ? 'INDISPONÍVEL'
+        : 'PERMITIR';
+
   return (
     <div className="flex flex-col text-white">
       <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
@@ -70,6 +88,30 @@ export default function SettingsSection() {
             }`}
           >
             {soundEnabled ? 'ATIVADO' : 'DESATIVADO'}
+          </button>
+        </div>
+
+        <div className="bg-[#131b2e] p-3.5 rounded-xl border border-gray-800 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-bold text-gray-200">Notificações do navegador</div>
+            <div className="text-[10px] text-gray-400">
+              {notificationPermission === 'denied'
+                ? 'Permissão bloqueada. Libere nas configurações do navegador.'
+                : 'Mostrar o aviso mesmo quando estiver em outra aba.'}
+            </div>
+          </div>
+          <button
+            onClick={enableSystemNotifications}
+            disabled={notificationPermission === 'granted' || notificationPermission === 'denied' || notificationPermission === 'unsupported'}
+            className={`px-4 py-2 rounded-lg text-xs font-bold border transition whitespace-nowrap ${
+              notificationPermission === 'granted'
+                ? 'bg-green-600/20 border-green-500 text-green-300'
+                : notificationPermission === 'denied'
+                  ? 'bg-red-950/50 border-red-800 text-red-300'
+                  : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-500'
+            } disabled:cursor-not-allowed`}
+          >
+            {permissionLabel}
           </button>
         </div>
 

@@ -1,13 +1,42 @@
-import Timer from './Timer';
+"use client";
 
-export default function FissureCard({ fissure, category }: { fissure: any, category?: string }) {
+import { useCallback, useEffect, useState } from 'react';
+import Timer from './Timer';
+import { translateMissionName } from '@/lib/data/missionTranslations';
+
+export default function FissureCard({
+  fissure,
+  category,
+  clockOffsetMs = 0,
+}: {
+  fissure: any;
+  category?: string;
+  clockOffsetMs?: number;
+}) {
+  const [isExpired, setIsExpired] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+
+  const handleExpire = useCallback(() => setIsExpired(true), []);
+
+  useEffect(() => {
+    setIsVisible(true);
+    const expiry = Date.parse(fissure?.expiry);
+    if (!Number.isFinite(expiry)) return;
+
+    const untilExpiry = Math.max(0, expiry - (Date.now() + clockOffsetMs));
+    const expireTimer = window.setTimeout(() => setIsExpired(true), untilExpiry);
+    const removeTimer = window.setTimeout(() => setIsVisible(false), untilExpiry + 3000);
+
+    return () => {
+      window.clearTimeout(expireTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, [clockOffsetMs, fissure?.id, fissure?.expiry]);
+
   // Proteção caso o objeto fissure venha undefined/null
-  if (!fissure) {
+  if (!fissure || !isVisible) {
     return null;
   }
-
-  // Calcula se o tempo da fissura já acabou
-  const isExpired = fissure.expiry ? new Date(fissure.expiry).getTime() <= Date.now() : false;
 
   // Função auxiliar para retornar a imagem correta com base na Era (Tier)
   const getRelicImage = (tierName: string) => {
@@ -33,7 +62,7 @@ export default function FissureCard({ fissure, category }: { fissure: any, categ
         <div>
           <p className="font-bold text-gray-200">{fissure.node}</p>
           <p className="text-blue-400 font-medium">
-            {fissure.missionType} <span className="text-gray-400">({fissure.tier})</span>
+            {translateMissionName(fissure.missionType)} <span className="text-gray-400">({fissure.tier})</span>
           </p>
           <p className="text-[10px] text-gray-500 uppercase tracking-wider">{fissure.enemy}</p>
         </div>
@@ -49,7 +78,11 @@ export default function FissureCard({ fissure, category }: { fissure: any, categ
           {isExpired ? (
             <span className="text-yellow-500 font-semibold">Fechou</span>
           ) : (
-            <Timer targetDate={fissure.expiry} />
+            <Timer
+              targetDate={fissure.expiry}
+              onExpire={handleExpire}
+              clockOffsetMs={clockOffsetMs}
+            />
           )}
         </div>
       </div>

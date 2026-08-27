@@ -1,9 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { FULL_ARBITRATION_LIST } from '@/lib/data/arbitrationData';
 import { triggerGlobalNotification } from '@/components/NotificationManager';
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 const ALL_MISSION_TYPES = [
   'Alchemy', 'Defection', 'Defense', 'Disruption', 'Excavation', 
@@ -88,15 +86,6 @@ interface ArbitrationAlert {
   type: string;
 }
 
-function parseArbDateTime(dateStr: string, timeStr: string, year: number): Date {
-  const datePart = dateStr.split(',')[1]?.trim() ?? dateStr.trim();
-  const [monthName, dayStr] = datePart.split(' ');
-  const month = MONTHS.indexOf(monthName);
-  const day = parseInt(dayStr, 10);
-  const [hh, mm] = timeStr.split(':').map(Number);
-  return new Date(year, month, day, hh, mm, 0, 0);
-}
-
 function formatTimeLeft(ms: number): string {
   if (ms <= 0) return 'Expirado / Atualizando...';
   const minutes = Math.floor((ms / (1000 * 60)) % 60);
@@ -110,6 +99,8 @@ export default function ArbitrationSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alerts, setAlerts] = useState<ArbitrationAlert[]>([]);
   const [selectedMissionType, setSelectedMissionType] = useState(ALL_MISSION_TYPES[0]);
+  const [schedule, setSchedule] = useState<ArbitrationScheduleItem[]>([]);
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
   
   const lastAlertedNodeRef = useRef<string | null>(null);
 
@@ -125,6 +116,32 @@ export default function ArbitrationSection() {
     }
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchSchedule = async () => {
+      try {
+        const response = await fetch('/api/arbitrations', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled && Array.isArray(data)) {
+          const serverTime = Number(response.headers.get('X-Server-Time'));
+          if (Number.isFinite(serverTime)) setClockOffsetMs(serverTime - Date.now());
+          setSchedule(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar calendário de Arbitragens:', error);
+      }
+    };
+
+    fetchSchedule();
+    const interval = setInterval(fetchSchedule, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
   const saveAlertsToStorage = (updatedAlerts: ArbitrationAlert[]) => {
     setAlerts(updatedAlerts);
     try {
@@ -135,17 +152,29 @@ export default function ArbitrationSection() {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000);
+    const interval = setInterval(() => setNow(new Date(Date.now() + clockOffsetMs)), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [clockOffsetMs]);
 
   const arbitrationWithDates = useMemo(() => {
-    const year = new Date().getFullYear();
-    return FULL_ARBITRATION_LIST.map((item) => ({
-      ...item,
-      start: parseArbDateTime(item.date, item.time, year),
-    }));
-  }, []);
+    return schedule.map((item) => {
+      const start = new Date(item.start);
+      return {
+        ...item,
+        start,
+        date: start.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'long',
+          day: 'numeric',
+        }),
+        time: start.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }),
+      };
+    });
+  }, [schedule]);
 
   const activeIndex = useMemo(() => {
     for (let i = 0; i < arbitrationWithDates.length; i++) {
@@ -363,4 +392,14 @@ export default function ArbitrationSection() {
       )}
     </>
   );
+}
+
+interface ArbitrationScheduleItem {
+  id: string;
+  start: number;
+  node: string;
+  type: string;
+  faction: string;
+  tier: string;
+  bonus?: string;
 }

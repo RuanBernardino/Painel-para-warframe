@@ -1,39 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface TimerProps {
   targetDate: string;
   onExpire?: () => void;
+  clockOffsetMs?: number;
 }
 
-export default function Timer({ targetDate, onExpire }: TimerProps) {
+export default function Timer({ targetDate, onExpire, clockOffsetMs = 0 }: TimerProps) {
   const [timeLeft, setTimeLeft] = useState('');
+  const hasExpiredRef = useRef(false);
 
   useEffect(() => {
-    let isRetrying = false;
+    hasExpiredRef.current = false;
 
     const calculateTime = () => {
-      const difference = new Date(targetDate).getTime() - new Date().getTime();
+      const difference = new Date(targetDate).getTime() - (Date.now() + clockOffsetMs);
 
       if (difference <= 0) {
         setTimeLeft('Transicionando');
-        
-        // Quando zerar, avisa o pai imediatamente e tenta de segundo em segundo até atualizar
-        if (!isRetrying && onExpire) {
-          isRetrying = true;
-          onExpire();
-          
-          const retryInterval = setInterval(() => {
-            onExpire();
-          }, 1000);
 
-          return () => clearInterval(retryInterval);
+        if (!hasExpiredRef.current && onExpire) {
+          hasExpiredRef.current = true;
+          onExpire();
         }
         return;
       }
-
-      isRetrying = false;
 
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
@@ -53,7 +46,7 @@ export default function Timer({ targetDate, onExpire }: TimerProps) {
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDate, onExpire]);
+  }, [clockOffsetMs, targetDate, onExpire]);
 
   return <span className="font-mono text-yellow-400">{timeLeft}</span>;
 }

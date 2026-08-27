@@ -1,18 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import FissureCard from './FissureCard';
 import FissureAlertModal from './FissureAlertModal';
+import { triggerGlobalNotification } from './NotificationManager';
+import { translateMissionName } from '@/lib/data/missionTranslations';
 
 interface VoidFissuresSectionProps {
   fissuresData: any[];
+  clockOffsetMs?: number;
 }
 
-export default function VoidFissuresSection({ fissuresData }: VoidFissuresSectionProps) {
+export default function VoidFissuresSection({ fissuresData, clockOffsetMs = 0 }: VoidFissuresSectionProps) {
   const [mainCategory, setMainCategory] = useState('Normal');
   const [showFilters, setShowFilters] = useState(false);
   const [filterTier, setFilterTier] = useState('Any');
   const [filterMission, setFilterMission] = useState('Any');
   const [showAlertModal, setShowModalAlert] = useState(false);
+  const knownFissureIdsRef = useRef<Set<string> | null>(null);
 
   const tiersOrder = ['Lith', 'Meso', 'Neo', 'Axi', 'Requiem', 'Omnia'];
 
@@ -31,6 +35,46 @@ export default function VoidFissuresSection({ fissuresData }: VoidFissuresSectio
       JSON.stringify(f).toLowerCase().includes('steelpath')
     );
   };
+
+  useEffect(() => {
+    const currentIds = new Set(fissuresData.map(fissure => String(fissure.id)));
+    const previousIds = knownFissureIdsRef.current;
+    knownFissureIdsRef.current = currentIds;
+
+    // A primeira carga apenas cria a base e não alerta sobre fissuras antigas.
+    if (!previousIds) return;
+
+    let alerts: Array<{ category: string; tier: string; mission: string }> = [];
+    let omniaEnabled = false;
+    try {
+      alerts = JSON.parse(localStorage.getItem('warframe_fissure_alerts') ?? '[]');
+      omniaEnabled = JSON.parse(localStorage.getItem('warframe_omnia_alert') ?? 'false');
+    } catch {
+      return;
+    }
+
+    for (const fissure of fissuresData) {
+      if (previousIds.has(String(fissure.id))) continue;
+
+      const storm = isFissureStorm(fissure);
+      const steelPath = isFissureSteelPath(fissure);
+      const fissureCategory = storm ? 'Void Storms' : steelPath ? 'Steel Path' : 'Normal';
+      const mission = String(fissure.missionType ?? '');
+      const matchesConfiguredAlert = alerts.some(alert =>
+        alert.category === fissureCategory &&
+        alert.tier === fissure.tier &&
+        mission.toLowerCase().includes(alert.mission.toLowerCase())
+      );
+
+      if ((omniaEnabled && fissure.tier === 'Omnia') || matchesConfiguredAlert) {
+        triggerGlobalNotification(
+          'fissure',
+          '🟢 Nova fissura!',
+          `${fissure.tier} · ${translateMissionName(mission)} em ${fissure.node}`
+        );
+      }
+    }
+  }, [fissuresData]);
 
   const categoryFissures = (Array.isArray(fissuresData) ? fissuresData : []).filter(f => {
     const storm = isFissureStorm(f);
@@ -137,7 +181,12 @@ export default function VoidFissuresSection({ fissuresData }: VoidFissuresSectio
               </div>
 
               {groupedFissures[tier].map((fissure: any) => (
-                <FissureCard key={fissure.id} fissure={fissure} category={mainCategory} />
+                <FissureCard
+                  key={fissure.id}
+                  fissure={fissure}
+                  category={mainCategory}
+                  clockOffsetMs={clockOffsetMs}
+                />
               ))}
             </div>
           ))

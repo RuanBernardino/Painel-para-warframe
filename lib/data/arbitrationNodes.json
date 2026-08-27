@@ -1,0 +1,618 @@
+{
+  "ClanNode0": {
+    "node": "Romula, Venus",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "10% resource bonus"
+  },
+  "ClanNode1": {
+    "node": "Malva, Venus",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "10% resource bonus"
+  },
+  "ClanNode10": {
+    "node": "Memphis, Phobos",
+    "type": "DEFECTION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode11": {
+    "node": "Zeugma, Phobos",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode12": {
+    "node": "Caracol, Saturn",
+    "type": "DEFECTION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "20% resource bonus"
+  },
+  "ClanNode13": {
+    "node": "Piscinas, Saturn",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "20% resource bonus"
+  },
+  "ClanNode14": {
+    "node": "Amarna, Sedna",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode15": {
+    "node": "Sangeru, Sedna",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "D",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode16": {
+    "node": "Ur, Uranus",
+    "type": "DISRUPTION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode17": {
+    "node": "Assur, Uranus",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode18": {
+    "node": "Akkad, Eris",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "B",
+    "bonus": "30% resource bonus"
+  },
+  "ClanNode19": {
+    "node": "Zabala, Eris",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "30% resource bonus"
+  },
+  "ClanNode2": {
+    "node": "Coba, Earth",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "C",
+    "bonus": "15% resource bonus"
+  },
+  "ClanNode20": {
+    "node": "Yursa, Neptune",
+    "type": "DEFECTION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "30% resource bonus"
+  },
+  "ClanNode21": {
+    "node": "Kelashin, Neptune",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "30% resource bonus"
+  },
+  "ClanNode22": {
+    "node": "Seimeni, Ceres",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "B",
+    "bonus": "35% resource bonus"
+  },
+  "ClanNode23": {
+    "node": "Gabii, Ceres",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "35% resource bonus"
+  },
+  "ClanNode24": {
+    "node": "Sechura, Pluto",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "B",
+    "bonus": "35% resource bonus"
+  },
+  "ClanNode25": {
+    "node": "Hieracon, Pluto",
+    "type": "EXCAVATION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "35% resource bonus"
+  },
+  "ClanNode3": {
+    "node": "Tikal, Earth",
+    "type": "EXCAVATION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "15% resource bonus"
+  },
+  "ClanNode4": {
+    "node": "Sinai, Jupiter",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "D",
+    "bonus": "20% resource bonus"
+  },
+  "ClanNode5": {
+    "node": "Cameria, Jupiter",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "20% resource bonus"
+  },
+  "ClanNode6": {
+    "node": "Larzac, Europa",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "C",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode7": {
+    "node": "Cholistan, Europa",
+    "type": "EXCAVATION",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "25% resource bonus"
+  },
+  "ClanNode8": {
+    "node": "Kadesh, Mars",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "C",
+    "bonus": "20% resource bonus"
+  },
+  "ClanNode9": {
+    "node": "Wahiba, Mars",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": "20% resource bonus"
+  },
+  "SettlementNode11": {
+    "node": "Gulliver, Phobos",
+    "type": "DEFENSE",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SettlementNode3": {
+    "node": "Stickney, Phobos",
+    "type": "SURVIVAL",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode100": {
+    "node": "Elara, Jupiter",
+    "type": "SURVIVAL",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode101": {
+    "node": "Kiliken, Venus",
+    "type": "EXCAVATION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode106": {
+    "node": "Alator, Mars",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "S",
+    "bonus": null
+  },
+  "SolNode118": {
+    "node": "Laomedeia, Neptune",
+    "type": "DISRUPTION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode122": {
+    "node": "Stephano, Uranus",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode123": {
+    "node": "V Prime, Venus",
+    "type": "SURVIVAL",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode125": {
+    "node": "Io, Jupiter",
+    "type": "DEFENSE",
+    "faction": "Corpus",
+    "tier": "D",
+    "bonus": null
+  },
+  "SolNode130": {
+    "node": "Lares, Mercury",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "D",
+    "bonus": null
+  },
+  "SolNode146": {
+    "node": "Draco, Ceres",
+    "type": "SURVIVAL",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode147": {
+    "node": "Cinxia, Ceres",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "A",
+    "bonus": null
+  },
+  "SolNode149": {
+    "node": "Casta, Ceres",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode16": {
+    "node": "Augustus, Mars",
+    "type": "EXCAVATION",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode164": {
+    "node": "Kala-azar, Eris",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode166": {
+    "node": "Nimus, Eris",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode167": {
+    "node": "Oestrus, Eris",
+    "type": "INFESTED SALVAGE",
+    "faction": "Infestation",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode17": {
+    "node": "Proteus, Neptune",
+    "type": "DEFENSE",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode172": {
+    "node": "Xini, Eris",
+    "type": "INTERCEPTION",
+    "faction": "Infestation",
+    "tier": "A",
+    "bonus": null
+  },
+  "SolNode177": {
+    "node": "Kappa, Sedna",
+    "type": "DISRUPTION",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode18": {
+    "node": "Rhea, Saturn",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "D",
+    "bonus": null
+  },
+  "SolNode185": {
+    "node": "Berehynia, Sedna",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode187": {
+    "node": "Selkie, Sedna",
+    "type": "SURVIVAL",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode195": {
+    "node": "Hydron, Sedna",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode211": {
+    "node": "Ose, Europa",
+    "type": "INTERCEPTION",
+    "faction": "Corpus",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode212": {
+    "node": "Paimon, Europa",
+    "type": "DEFENSE",
+    "faction": "Corpus",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode216": {
+    "node": "Valefor, Europa",
+    "type": "EXCAVATION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode22": {
+    "node": "Tessera, Venus",
+    "type": "DEFENSE",
+    "faction": "Corpus",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode224": {
+    "node": "Odin, Mercury",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode23": {
+    "node": "Cytherean, Venus",
+    "type": "INTERCEPTION",
+    "faction": "Corpus",
+    "tier": "A",
+    "bonus": null
+  },
+  "SolNode230": {
+    "node": "Everview Arc, Zariman",
+    "type": "VOID FLOOD",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode232": {
+    "node": "Tuvul Commons, Zariman",
+    "type": "VOID CASCADE",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode233": {
+    "node": "Oro Works, Zariman",
+    "type": "VOID ARMAGEDDON",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode25": {
+    "node": "Callisto, Jupiter",
+    "type": "INTERCEPTION",
+    "faction": "Corpus",
+    "tier": "S",
+    "bonus": null
+  },
+  "SolNode26": {
+    "node": "Lith, Earth",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode30": {
+    "node": "Olympus, Mars",
+    "type": "DISRUPTION",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode302": {
+    "node": "Tycho, Lua",
+    "type": "SURVIVAL",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode305": {
+    "node": "Stöfler, Lua",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "D",
+    "bonus": null
+  },
+  "SolNode308": {
+    "node": "Apollo, Lua",
+    "type": "DISRUPTION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode309": {
+    "node": "Yuvarium, Lua",
+    "type": "CONJUNCTION SURVIVAL",
+    "faction": "Orokin",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode39": {
+    "node": "Everest, Earth",
+    "type": "EXCAVATION",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode402": {
+    "node": "Taranis, Void",
+    "type": "DEFENSE",
+    "faction": "Orokin",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode405": {
+    "node": "Ani, Void",
+    "type": "SURVIVAL",
+    "faction": "Orokin",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode408": {
+    "node": "Belenus, Void",
+    "type": "DEFENSE",
+    "faction": "Orokin",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode409": {
+    "node": "Mot, Void",
+    "type": "SURVIVAL",
+    "faction": "Orokin",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode412": {
+    "node": "Mithra, Void",
+    "type": "INTERCEPTION",
+    "faction": "Orokin",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode42": {
+    "node": "Helene, Saturn",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode43": {
+    "node": "Cerberus, Pluto",
+    "type": "INTERCEPTION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode450": {
+    "node": "Tyana Pass, Mars",
+    "type": "Mirror Defense",
+    "faction": "Corpus",
+    "tier": "S",
+    "bonus": null
+  },
+  "SolNode46": {
+    "node": "Spear, Mars",
+    "type": "DEFENSE",
+    "faction": "Grineer",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode6": {
+    "node": "Despina, Neptune",
+    "type": "EXCAVATION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode64": {
+    "node": "Umbriel, Uranus",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "S",
+    "bonus": null
+  },
+  "SolNode707": {
+    "node": "Hyf, Deimos",
+    "type": "DEFENSE",
+    "faction": "Infestation",
+    "tier": "B",
+    "bonus": null
+  },
+  "SolNode711": {
+    "node": "Terrorem, Deimos",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode718": {
+    "node": "Cambire, Deimos",
+    "type": "Alchemy",
+    "faction": "The Murmur",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode719": {
+    "node": "Munio, Deimos",
+    "type": "Mirror Defense",
+    "faction": "The Murmur",
+    "tier": "S",
+    "bonus": null
+  },
+  "SolNode72": {
+    "node": "Outer Terminus, Pluto",
+    "type": "DEFENSE",
+    "faction": "Corpus",
+    "tier": "C",
+    "bonus": null
+  },
+  "SolNode81": {
+    "node": "Palus, Pluto",
+    "type": "SURVIVAL",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode85": {
+    "node": "Gaia, Earth",
+    "type": "INTERCEPTION",
+    "faction": "Grineer",
+    "tier": "D",
+    "bonus": null
+  },
+  "SolNode87": {
+    "node": "Ganymede, Jupiter",
+    "type": "DISRUPTION",
+    "faction": "Corpus",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode94": {
+    "node": "Apollodorus, Mercury",
+    "type": "SURVIVAL",
+    "faction": "Infestation",
+    "tier": "F",
+    "bonus": null
+  },
+  "SolNode96": {
+    "node": "Titan, Saturn",
+    "type": "SURVIVAL",
+    "faction": "Grineer",
+    "tier": "F",
+    "bonus": null
+  }
+}

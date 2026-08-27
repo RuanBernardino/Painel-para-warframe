@@ -18,6 +18,16 @@ export function triggerGlobalNotification(type: 'fissure' | 'cycle' | 'test' | '
   }
 }
 
+export function getNotificationPermission(): NotificationPermission | 'unsupported' {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+  return Notification.permission;
+}
+
+export async function requestNotificationPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported' as const;
+  return Notification.requestPermission();
+}
+
 export default function NotificationManager() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -27,12 +37,28 @@ export default function NotificationManager() {
       const { type, title, message } = customEvent.detail;
 
       // Tocar som centralizado
-      try {
-        const audio = new Audio('/AlarmA.mp3');
-        audio.volume = 0.25;
-        audio.play().catch(err => console.log('Áudio bloqueado pelo navegador:', err));
-      } catch (err) {
-        console.log('Erro ao carregar som:', err);
+      const soundEnabled = localStorage.getItem('warframe_sound_enabled') === 'true';
+      const savedVolume = Number(localStorage.getItem('warframe_alert_volume') ?? '80');
+
+      if (soundEnabled) {
+        try {
+          const audio = new Audio('/AlarmA.mp3');
+          audio.volume = Math.min(1, Math.max(0, Number.isFinite(savedVolume) ? savedVolume / 100 : 0.8));
+          audio.play().catch(err => console.log('Audio bloqueado pelo navegador:', err));
+        } catch (err) {
+          console.log('Erro ao carregar som:', err);
+        }
+      }
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(title, {
+            body: message,
+            tag: `warframe-${type}-${title}-${message}`,
+          });
+        } catch (err) {
+          console.log('Erro ao exibir notificacao do sistema:', err);
+        }
       }
 
       const newToast: ToastItem = {

@@ -60,3 +60,9 @@ Se você quiser clonar e rodar o projeto na sua máquina, siga os passos abaixo:
 ---
 
 > Desenvolvido por Ruan Bernardino.
+
+## Fontes e créditos
+
+- Estado global do jogo e API comunitária: [WarframeStat.us](https://warframestat.us/).
+- Calendário de Arbitragens, fallback do World State e dados auxiliares: [browse.wf](https://browse.wf/about), por Calamity, Inc.
+- Classificações de tiers de Arbitragem: Arbitration Goons, disponibilizadas pelo browse.wf.
