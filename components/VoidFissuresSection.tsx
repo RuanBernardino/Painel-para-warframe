@@ -4,6 +4,7 @@ import FissureCard from './FissureCard';
 import FissureAlertModal from './FissureAlertModal';
 import { triggerGlobalNotification } from './NotificationManager';
 import { translateMissionName } from '@/lib/data/missionTranslations';
+import { usePersistentCollapsed } from '@/lib/hooks/usePersistentCollapsed';
 
 interface VoidFissuresSectionProps {
   fissuresData: any[];
@@ -11,6 +12,7 @@ interface VoidFissuresSectionProps {
 }
 
 export default function VoidFissuresSection({ fissuresData, clockOffsetMs = 0 }: VoidFissuresSectionProps) {
+  const { isCollapsed, toggleCollapsed } = usePersistentCollapsed('warframe_section_fissures_collapsed');
   const [mainCategory, setMainCategory] = useState('Normal');
   const [showFilters, setShowFilters] = useState(false);
   const [filterTier, setFilterTier] = useState('Any');
@@ -103,9 +105,13 @@ export default function VoidFissuresSection({ fissuresData, clockOffsetMs = 0 }:
     <div className="bg-[#131b2e] p-5 rounded-xl border border-gray-800 mb-6 relative">
       
       {/* CABEÇALHO: ABAS, CONTADOR, FILTROS E O BOTÃO DE ALARME INTEGRADO */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 border-b border-gray-800 pb-3">
+      <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-gray-800 pb-3 ${isCollapsed ? '' : 'mb-4'}`}>
         <div className="flex items-center gap-2 w-full md:w-auto">
-          {['Normal', 'Steel Path', 'Void Storms'].map((cat) => (
+          {isCollapsed ? (
+            <div className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+              <span>🌀</span> Fissuras do Void
+            </div>
+          ) : ['Normal', 'Steel Path', 'Void Storms'].map((cat) => (
             <button
               key={cat}
               onClick={() => setMainCategory(cat)}
@@ -131,16 +137,28 @@ export default function VoidFissuresSection({ fissuresData, clockOffsetMs = 0 }:
               setShowModalAlert={setShowModalAlert}
             />
 
-            <button 
+            {!isCollapsed && <button 
               onClick={() => setShowFilters(!showFilters)}
               className="bg-[#0e1422] hover:bg-gray-800 border border-gray-700 text-xs px-3 py-1.5 rounded-lg text-gray-300 transition flex items-center gap-1.5"
             >
               <span>🔍</span> {showFilters ? 'Ocultar Filtros' : 'Filtrar Era/Missão'}
+            </button>}
+
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-expanded={!isCollapsed}
+              title={isCollapsed ? 'Abrir Fissuras' : 'Recolher Fissuras'}
+              className="w-8 h-8 rounded-lg border border-gray-700 bg-[#0e1422] text-gray-300 hover:text-white hover:border-blue-500/60 transition flex items-center justify-center"
+            >
+              <span className={`transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>▼</span>
             </button>
           </div>
         </div>
       </div>
 
+      <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${isCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}>
+        <div className="min-h-0 overflow-hidden">
       {showFilters && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 bg-[#0e1422] p-3 rounded-lg border border-gray-800/80">
           <select 
@@ -191,6 +209,8 @@ export default function VoidFissuresSection({ fissuresData, clockOffsetMs = 0 }:
             </div>
           ))
         )}
+      </div>
+        </div>
       </div>
     </div>
   );

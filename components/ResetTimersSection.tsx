@@ -22,8 +22,9 @@ export default function ResetTimersSection() {
 
     async function fetchTimersData() {
       try {
-        const res = await fetch('https://api.warframestat.us/pc');
-        rawData = await res.json();
+        const res = await fetch('/api/warframe/voidTrader', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Falha ao buscar Baro Ki\'Teer');
+        rawData = { voidTrader: await res.json() };
         updateCalculations();
       } catch (err) {
         console.error('Erro ao buscar reset timers:', err);

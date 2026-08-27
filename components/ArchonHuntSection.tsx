@@ -11,13 +11,13 @@ export default function ArchonHuntSection({ onArchonLoaded }: ArchonHuntSectionP
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('--');
 
-  const endpointUrl = 'https://api.warframestat.us/pc/archonHunt';
+  const endpointUrl = '/api/warframe/archonHunt';
 
   useEffect(() => {
     async function fetchArchon() {
       try {
         setLoading(true);
-        const response = await fetch(endpointUrl);
+        const response = await fetch(endpointUrl, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error('Falha ao buscar dados do endpoint de Archon.');
         }

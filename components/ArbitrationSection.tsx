@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { triggerGlobalNotification } from '@/components/NotificationManager';
+import { usePersistentCollapsed } from '@/lib/hooks/usePersistentCollapsed';
 
 
 const ALL_MISSION_TYPES = [
@@ -94,6 +95,7 @@ function formatTimeLeft(ms: number): string {
 }
 
 export default function ArbitrationSection() {
+  const { isCollapsed, toggleCollapsed } = usePersistentCollapsed('warframe_section_arbitration_collapsed');
   const [isMounted, setIsMounted] = useState(false);
   const [now, setNow] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -229,7 +231,7 @@ export default function ArbitrationSection() {
   return (
     <>
       <div className="bg-[#131b2e] p-4 rounded-xl border border-gray-800 text-white w-full">
-        <div className="flex justify-between items-center mb-3 border-b border-gray-800 pb-2">
+        <div className={`flex justify-between items-center border-b border-gray-800 pb-2 ${isCollapsed ? '' : 'mb-3'}`}>
           <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
             <span>⚔️</span> ARBITRAGEM
           </h3>
@@ -255,9 +257,20 @@ export default function ArbitrationSection() {
             <span className="font-mono text-xs text-yellow-300 bg-[#0e1422] px-2 py-0.5 rounded border border-gray-800">
               {isMounted ? timeLeft : '--'}
             </span>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-expanded={!isCollapsed}
+              title={isCollapsed ? 'Abrir Arbitragem' : 'Recolher Arbitragem'}
+              className="w-8 h-8 rounded-lg border border-gray-700 bg-[#0e1422] text-gray-300 hover:text-white hover:border-yellow-500/60 transition flex items-center justify-center"
+            >
+              <span className={`transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>▼</span>
+            </button>
           </div>
         </div>
 
+        <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${isCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}>
+          <div className="min-h-0 overflow-hidden">
         {arbitration ? (
           <div className="space-y-3 text-xs">
             {/* Missão Atual */}
@@ -311,6 +324,8 @@ export default function ArbitrationSection() {
             Nenhuma arbitragem ativa no cronograma para o horário atual.
           </div>
         )}
+          </div>
+        </div>
       </div>
 
       {/* MODAL DE GERENCIAMENTO DE ALERTAS */}

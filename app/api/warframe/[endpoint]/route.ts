@@ -13,6 +13,21 @@ type OracleMission = {
   Hard?: boolean;
 };
 
+type OracleLiteSortie = {
+  _id?: { $oid: string };
+  Activation: MongoDate;
+  Expiry: MongoDate;
+  Boss?: string;
+  Missions?: Array<{ missionType?: string; node?: string }>;
+};
+
+type OracleVoidTrader = {
+  _id?: { $oid: string };
+  Activation: MongoDate;
+  Expiry: MongoDate;
+  Node?: string;
+};
+
 const TIER_BY_MODIFIER: Record<string, { tier: string; tierNum: number }> = {
   VoidT1: { tier: 'Lith', tierNum: 1 },
   VoidT2: { tier: 'Meso', tierNum: 2 },
@@ -24,6 +39,32 @@ const TIER_BY_MODIFIER: Record<string, { tier: string; tierNum: number }> = {
 
 const CYCLE_ENDPOINTS = new Set(['earthCycle', 'cetusCycle', 'vallisCycle', 'cambionCycle']);
 
+const ARCHON_BOSSES: Record<string, string> = {
+  SORTIE_BOSS_AMAR: 'Archon Amar',
+  SORTIE_BOSS_BOREAL: 'Archon Boreal',
+  SORTIE_BOSS_NIRA: 'Archon Nira',
+};
+
+const MISSION_TYPES: Record<string, string> = {
+  MT_ASSASSINATION: 'Assassinato',
+  MT_CAPTURE: 'Captura',
+  MT_DEFENSE: 'Defesa',
+  MT_EXTERMINATION: 'Extermínio',
+  MT_INTEL: 'Espionagem',
+  MT_MOBILE_DEFENSE: 'Defesa Móvel',
+  MT_RESCUE: 'Resgate',
+  MT_SABOTAGE: 'Sabotagem',
+  MT_SURVIVAL: 'Sobrevivência',
+  MT_TERRITORY: 'Interceptação',
+};
+
+const RELAY_LOCATIONS: Record<string, string> = {
+  MercuryHUB: 'Larunda Relay (Mercury)',
+  EarthHUB: 'Strata Relay (Earth)',
+  SaturnHUB: 'Kronia Relay (Saturn)',
+  PlutoHUB: 'Orcus Relay (Pluto)',
+};
+
 type CycleData = {
   expiry?: string;
   isDay?: boolean;
@@ -34,6 +75,68 @@ type CycleData = {
 
 function mongoTime(value: MongoDate): number {
   return Number(value.$date.$numberLong);
+}
+
+function firstEntry<T>(value: T | T[] | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function localizationTail(value?: string): string {
+  if (!value) return '';
+  return value.split('/').pop()?.replace(/^RelayStation/, '') ?? value;
+}
+
+async function getOracleWorldState() {
+  const response = await fetch('https://oracle.browse.wf/worldState.min.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error('World state alternativo indisponível');
+  return response.json();
+}
+
+async function getOracleVoidTrader() {
+  const worldState = await getOracleWorldState() as { VoidTraders?: OracleVoidTrader | OracleVoidTrader[] };
+  const trader = firstEntry(worldState.VoidTraders);
+  if (!trader) throw new Error('Dados do Baro indisponíveis');
+
+  return {
+    id: trader._id?.$oid ?? `baro-${mongoTime(trader.Activation)}`,
+    activation: new Date(mongoTime(trader.Activation)).toISOString(),
+    expiry: new Date(mongoTime(trader.Expiry)).toISOString(),
+    character: "Baro Ki'Teer",
+    location: RELAY_LOCATIONS[trader.Node ?? ''] ?? trader.Node ?? 'Relay desconhecido',
+  };
+}
+
+async function getOracleArchonHunt() {
+  const [worldState, regionsResponse] = await Promise.all([
+    getOracleWorldState() as Promise<{ LiteSorties?: OracleLiteSortie | OracleLiteSortie[] }>,
+    fetch('https://browse.wf/warframe-public-export-plus/ExportRegions.json', { cache: 'no-store' }),
+  ]);
+  if (!regionsResponse.ok) throw new Error('Regiões do mapa indisponíveis');
+
+  const hunt = firstEntry(worldState.LiteSorties);
+  if (!hunt) throw new Error('Caçada ao Arconte indisponível');
+
+  const regions = await regionsResponse.json() as Record<string, { name?: string; systemName?: string }>;
+  const missions = (hunt.Missions ?? []).map(mission => {
+    const region = regions[mission.node ?? ''];
+    const nodeName = localizationTail(region?.name) || mission.node || 'Nodo desconhecido';
+    const systemName = localizationTail(region?.systemName);
+    return {
+      type: MISSION_TYPES[mission.missionType ?? ''] ?? mission.missionType ?? 'Missão',
+      node: systemName ? `${nodeName} (${systemName})` : nodeName,
+    };
+  });
+
+  return {
+    id: hunt._id?.$oid ?? `archon-${mongoTime(hunt.Activation)}`,
+    activation: new Date(mongoTime(hunt.Activation)).toISOString(),
+    expiry: new Date(mongoTime(hunt.Expiry)).toISOString(),
+    boss: ARCHON_BOSSES[hunt.Boss ?? ''] ?? (localizationTail(hunt.Boss) || 'Caçada Archon'),
+    faction: 'Narmer',
+    node: missions.at(-1)?.node ?? missions[0]?.node ?? 'Sistema de Origem',
+    missions,
+  };
 }
 
 function hasActiveFissures(data: unknown): data is Array<{ expiry: string }> {
@@ -228,6 +331,22 @@ export async function GET(
   { params }: { params: Promise<{ endpoint: string }> }
 ) {
   const { endpoint } = await params;
+
+  if (endpoint === 'voidTrader' || endpoint === 'archonHunt') {
+    try {
+      const data = endpoint === 'voidTrader'
+        ? await getOracleVoidTrader()
+        : await getOracleArchonHunt();
+      return NextResponse.json(data, {
+        headers: {
+          'X-Warframe-Source': 'browse-wf',
+          'X-Server-Time': Date.now().toString(),
+        },
+      });
+    } catch {
+      return NextResponse.json({ error: 'Dados temporariamente indisponíveis' }, { status: 503 });
+    }
+  }
   
   const targetPath = endpoint === 'fissures' ? 'fissures' : endpoint;
 
