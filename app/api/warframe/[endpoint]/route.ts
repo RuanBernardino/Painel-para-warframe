@@ -163,10 +163,10 @@ async function getOracleFissures() {
   const [worldStateResponse, regionsResponse, dictionaryResponse] = await Promise.all([
     fetch('https://oracle.browse.wf/worldState.min.json', { cache: 'no-store' }),
     fetch('https://browse.wf/warframe-public-export-plus/ExportRegions.json', {
-      next: { revalidate: 86400 },
+      cache: 'no-store',
     }),
     fetch('https://browse.wf/warframe-public-export-plus/dict.en.json', {
-      next: { revalidate: 86400 },
+      cache: 'no-store',
     }),
   ]);
 
